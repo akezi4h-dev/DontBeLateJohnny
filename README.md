@@ -1,5 +1,5 @@
 # 🚑 The Ambulance Sticker Problem
-### A UX Research Thesis — Six Roles, Three Hospitals, One Broken System
+### Six Roles, Three Hospitals, One Broken System
  
 > *"The schedule tells him where to be. This tool tells him whether he can also be everything else."*
  
@@ -7,13 +7,13 @@
  
 ## 📋 Overview
  
-This is a pre-AI UX design thesis documenting a real person, a real problem, and a defensible definition of "helped." Every claim is grounded in direct quotes, observed artifacts, and documented behavior — nothing is invented or assumed.
+This is a pre-AI UX design thesis documenting a real person, a real problem, and a defensible definition of "helped." Every claim is grounded in direct quotes, observed artifacts, and documented behavior nothing is invented or assumed.
  
 ---
  
 ## 👤 Section 1 — The Person
  
-**Johnny Truong** is a 35-year-old Vietnamese-American man living in the suburbs outside Nashville, Tennessee.
+**Johnny Truong** is a 35-year-old Vietnamese American man living in the suburbs outside Nashville, Tennessee.
  
 On any given week, he holds shifts across three separate hospital systems while managing multiple additional roles:
  
@@ -26,7 +26,7 @@ On any given week, he holds shifts across three separate hospital systems while 
 | 💅 Nail Shop Co-Owner | Independent |
 | 👨‍👧 Father | — |
  
-He is not disorganized. He is overloaded by systems that were never built to coexist. Each employer controls its own scheduling platform, its own login, and its own two-factor authentication. None of them talk to each other — and Johnny lives in the gaps between them.
+He is not disorganized. He is overloaded by systems that were never built to coexist. Each employer controls its own scheduling platform, its own login, and its own two-factor authentication. None of them talk to each other and Johnny lives in the gaps between them.
  
 ### By the Numbers
  
@@ -40,7 +40,7 @@ He is not disorganized. He is overloaded by systems that were never built to coe
  
 ## 🔥 Section 2 — The Problem
  
-Johnny struggles to manage a complex, multirole schedule across multiple employers with separate systems, logins, and verification steps — making it nearly impossible to view his schedule in one place.
+Johnny struggles to manage a complex, multirole schedule across multiple employers with separate systems, logins, and verification steps making it nearly impossible to view his schedule in one place.
  
 ### In His Own Words
  
@@ -107,7 +107,7 @@ Johnny defined this himself, unprompted:
 > *"It would be cool to have something that I can differentiate my days then when I click on the day I can add tasks to do and cross them off as I go."*
 > — Johnny Truong, direct feature request
  
-> *"Less stressful? Cause planned out further ahead and more accurate if it could update all 3 schedules in real time. Accuracy. Editable. Customizable. Fun."*
+> *"Less stressful, Cause planned out further ahead and more accurate if it could update all 3 schedules in real time. Accuracy. Editable. Customizable. Fun."*
 > — On what a better system would feel like
  
 ### Defensible Definition of "Helped"
