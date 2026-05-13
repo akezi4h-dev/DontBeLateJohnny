@@ -13,7 +13,7 @@ This is a pre-AI UX design thesis documenting a real person, a real problem, and
  
 ---
  
-## Section 1: The Person
+# Section 1: The Person
  
 **Johnny Truong** is a 35-year-old Vietnamese-American man living outside Nashville, Tennessee.
  
@@ -40,10 +40,13 @@ He isn’t bad at organization. The problem is that none of the systems he relie
  
 ---
  
-## Section 2:  The Problem
+# Section 2:  The Problem
  
 Johnny struggles to manage a constantly changing schedule across multiple employers, all using separate systems, separate logins, and separate verification steps. Even just seeing everything in one place becomes a task on its own.
  
+## Research Documentation
+ 
+
 ### In His Own Words
  
 > *"Different logins. Different passwords. Two factor authentications."*
@@ -87,6 +90,20 @@ For reminders, Johnny texts himself and edits or crosses things out directly in 
 | 02 | He only checks schedules **once a week or right before a shift** because checking more often means logging into three different systems repeatedly |
 | 03 | Last-minute schedule changes break the entire workaround system — screenshots become outdated and need manual edits |
 | 04 | Tasks live completely separate from scheduling — **there’s no connection between what he needs to do and when he realistically has time to do it** |
+
+### All Direct Quotes
+ 
+| Quote | Context |
+|---|---|
+| *"Different logins. Different passwords. Two factor authentications."* | On switching between hospital systems |
+| *"When things change last minute I have to basically paint/photoshop my shit lol."* | On schedule changes |
+| *"Ease, frequency of changes, lack of drive to look for something better."* | On why he uses screenshots |
+| *"Habit."* | The single-word explanation |
+| *"There's probably a calendar app for all this. I just haven't had the time to look."* | On awareness of alternatives |
+| *"Remembering which facility im going to."* | His biggest source of mental effort |
+| *"I text myself reminders/lists and edit or cross out."* | His task management system |
+| *"It would be cool to have something that I can differentiate my days then when I click on the day I can add tasks to do and cross them off as I go."* | His direct feature request |
+| *"My problems revolve around commute times and making sure I got the necessary time/bandwidth to take care of the things I need to do."* | The real underlying problem |
  
 ---
  
@@ -109,7 +126,7 @@ This wasn’t approached like a one-and-done interview. Johnny’s situation cha
 -  Research conducted during natural moments, not staged ones
 ---
  
-##  Section 4 : What Help Looks Like
+#  Section 4 : What Help Looks Like
  
 Johnny defined this himself without prompting:
  
@@ -127,7 +144,7 @@ Tasks live directly on the day they belong to. If a shift changes, the schedule 
  
 ---
  
-## Section 5 : The Approach
+# Section 5 : The Approach
  
 A **screenshot-to-schedule calendar app** that uses character recognition to pull shift details from uploaded screenshots and automatically convert them into structured events across multiple calendars in one unified view.
  
@@ -150,7 +167,7 @@ A real-time "leave now" notification based on current location, destination faci
  
 ---
  
-## Section 6 : Position Going In
+# Section 6 : Position Going In
  
 The core position: **eliminate the manual workaround loop**  the screenshots, stickers, edits, and mental tracking  by turning raw schedule information into structured, usable calendar events automatically. The user shouldn’t have to manage the same schedule twice.
  
@@ -165,7 +182,7 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
  
 ---
  
-## Section 7 : What This Project Is Not
+# Section 7 : What This Project Is Not
  
 - **Not an offline-first machine** — Internet access is required for real-time traffic, commute alerts, and schedule syncing. Offline support is currently outside scope.
 - **Not a replacement for employer systems** — Cannot remove login requirements, two-factor authentication, or hospital restrictions imposed by Vanderbilt, Nashville General, or Publix. The tool works *around* existing systems, not *through* them.
@@ -173,22 +190,6 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
 - **Not speculative** — Every feature connects directly back to something Johnny said or something observed in real behavior. If there’s no evidence for it, it doesn’t belong here.
 ---
 
-# Research Documentation
-
-## All Direct Quotes
- 
-| Quote | Context |
-|---|---|
-| *"Different logins. Different passwords. Two factor authentications."* | On switching between hospital systems |
-| *"When things change last minute I have to basically paint/photoshop my shit lol."* | On schedule changes |
-| *"Ease, frequency of changes, lack of drive to look for something better."* | On why he uses screenshots |
-| *"Habit."* | The single-word explanation |
-| *"There's probably a calendar app for all this. I just haven't had the time to look."* | On awareness of alternatives |
-| *"Remembering which facility im going to."* | His biggest source of mental effort |
-| *"I text myself reminders/lists and edit or cross out."* | His task management system |
-| *"It would be cool to have something that I can differentiate my days then when I click on the day I can add tasks to do and cross them off as I go."* | His direct feature request |
-| *"My problems revolve around commute times and making sure I got the necessary time/bandwidth to take care of the things I need to do."* | The real underlying problem |
- 
 ---
 
 # Platform Rationale
