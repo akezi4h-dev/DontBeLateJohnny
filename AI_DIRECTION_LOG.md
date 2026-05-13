@@ -133,3 +133,18 @@ AI identified the issue: `BottomNav` has `md:hidden` — it correctly disappears
 Accepted the fix. The placement is correct — it puts actions near where the user's attention already is (the month header) rather than adding a separate sidebar that would complicate the two-column layout. The icons use the same SVG language as the rest of the UI.
 
 ---
+
+## Entry 11 — iOS Calendar Screenshot Parsing Failure
+
+**Asked:**
+Uploaded an iOS Calendar screenshot ("Your shifts / Pharmacy (CDT)") showing May and June shifts. The OCR upload returned no results — zero shifts parsed.
+
+**Produced:**
+Diagnosed the mismatch: `parseSchedule.js` expected dates in "May 16" or "5/16" format, but the iOS Calendar layout puts the month name as a standalone section header ("May") and the day as a bare number on its own line ("16" or "16SAT"). The parser had no concept of stateful month tracking and couldn't associate "16" with May. Also confirmed the time format "9:30 AM – 6:00 PM (CDT)" was compatible with the existing range regex once a date was found.
+
+Fixed by adding two behaviors to `parseScheduleText`: (1) when a line matches a standalone month name, store `currentMonth`; (2) when a line matches a bare 1–2 digit number optionally followed by a day abbreviation, and `currentMonth` is set, construct the full ISO date from `currentYear + currentMonth + day`. Also added skip logic for "All Day" and "Off" lines to avoid false positives.
+
+**Decided:**
+Accepted the fix. The real source of the failure was that the parser was written for Science Provider and Teams screenshot formats, not the native iOS Calendar app. Johnny is evidently exporting directly from iOS Calendar, not a scheduling system. The fix handles both formats without breaking the original logic.
+
+---

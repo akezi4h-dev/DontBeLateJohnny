@@ -103,3 +103,19 @@ After seeing the login screen, directed AI to keep him logged in and not prompt 
 Johnny uses this app daily across two devices while walking between hospital locations. An app that interrupts him with a login screen mid-month would break the use case entirely. The PRD's entire argument is that Johnny will check one screen instead of three — that only holds if the one screen is frictionless. Persistent 90-day sessions remove an interruption that would have contradicted the product's core thesis.
 
 ---
+
+## Entry 07 — Parser Was Built for the Wrong Screenshot Format
+
+**What AI gave me:**
+The original OCR parser was written to handle Science Provider and Teams scheduling system screenshots — formats where dates appear as "May 16" inline with shift data. When Johnny uploaded an iOS Calendar screenshot on first contact day, the parser returned zero shifts. The parser wasn't wrong for the format it was built for; it just wasn't built for the format Johnny actually uses.
+
+**Why I rejected it:**
+The PRD noted that Johnny takes screenshots of his schedule, but it assumed those screenshots came from the scheduling software portals (Science Provider, Teams). Johnny actually exports from iOS Calendar — the native Apple app — which uses a completely different layout: month names as standalone section headers, dates as bare numbers on their own lines, and timezone suffixes like "(CDT)" on time ranges.
+
+**What I did instead:**
+Directed AI to add stateful month tracking to the parser: (1) detect standalone month names as section headers and store them, (2) treat bare day numbers (like "16" or "16SAT") as dates relative to the current stored month, (3) skip "All Day" and "Off" lines that iOS Calendar uses for non-shift days.
+
+**Why it's better:**
+The fix handles both the original Science Provider / Teams format AND the iOS Calendar format without breaking anything. More importantly: the first contact session revealed a real assumption gap in the PRD. Johnny's screenshot workflow is iOS Calendar, not the scheduling portals. Building only for the portal format would have left the OCR feature permanently broken for his actual use pattern.
+
+---

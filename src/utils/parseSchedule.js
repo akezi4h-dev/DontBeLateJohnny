@@ -68,19 +68,44 @@ export function parseScheduleText(ocrText) {
   const fallbackYear = new Date().getFullYear()
   const globalEmployer = detectEmployer(ocrText)
 
-  // Regex: "7:00 AM - 3:00 PM" or "7am-3pm" or "07:00 to 15:00"
+  // "7:00 AM - 3:00 PM", "7am-3pm", "07:00 to 15:00", "9:30 AM – 6:00 PM (CDT)"
   const rangeRe = /([\d]{1,2}(?::\d{2})?\s*(?:am|pm)?)\s*[-–—to]+\s*([\d]{1,2}(?::\d{2})?\s*(?:am|pm)?)/i
+  // iOS Calendar bare day: "16", "16SAT", "06"
+  const bareDayRe = /^(\d{1,2})\s*(?:mon|tue|wed|thu|fri|sat|sun)?$/i
 
   let lastDate = null
+  let currentMonth = null
+  let currentYear = fallbackYear
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
+    const lineLower = line.toLowerCase().trim()
 
-    // Look for a date on this line
-    const date = parseDate(line, fallbackYear)
+    // Standalone month header ("May", "June") — iOS Calendar section divider
+    if (MONTH_MAP[lineLower]) {
+      currentMonth = MONTH_MAP[lineLower]
+      continue
+    }
+
+    // Skip All Day and Off labels
+    if (/^all\s*day$/i.test(line) || /^off$/i.test(line)) continue
+
+    // Standard date formats ("May 13", "5/13/2026")
+    const date = parseDate(line, currentYear)
     if (date) lastDate = date
 
-    // Look for a time range on this line
+    // iOS Calendar bare day number ("16", "16 SAT") when we know the month
+    if (!date && currentMonth) {
+      const bd = line.match(bareDayRe)
+      if (bd) {
+        const day = parseInt(bd[1])
+        if (day >= 1 && day <= 31) {
+          lastDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        }
+      }
+    }
+
+    // Time range on this line
     const rangeMatch = line.match(rangeRe)
     if (rangeMatch && lastDate) {
       const startTime = parseTime(rangeMatch[1])
