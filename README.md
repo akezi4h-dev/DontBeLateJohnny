@@ -3,14 +3,14 @@
 > *"The schedule tells him where to be. This tool tells him whether he can also be everything else."*
  
 ---
- 
-## 📋 Overview
+
+# Design Argument & Research
  
 This is a pre-AI UX design thesis documenting a real person, a real problem, and a grounded definition of what being "helped" actually means. Every claim here comes directly from interviews, screenshots, observations, or documented behavior. Nothing is made up for the sake of the project.
  
 ---
  
-## 👤 Section 1 — The Person
+## Section 1: The Person
  
 **Johnny Truong** is a 35-year-old Vietnamese-American man living outside Nashville, Tennessee.
  
@@ -18,12 +18,12 @@ On any given week, he’s balancing shifts across three different hospital syste
  
 | Role | Employer |
 |---|---|
-| 💊 Pharmacist | Publix |
-| 💊 Pharmacist | Vanderbilt Hospital |
-| 💊 Pharmacist | Nashville General Hospital |
-| 🏠 Real Estate Agent | Independent |
-| 💅 Nail Shop Co-Owner | Independent |
-| 👨‍👧 Father | — |
+| Pharmacist | Publix |
+| Pharmacist | Vanderbilt Hospital |
+| Pharmacist | Nashville General Hospital |
+| Real Estate Agent | Independent |
+| Nail Shop Co-Owner | Independent |
+| Father | Family |
  
 He isn’t bad at organization. The problem is that none of the systems he relies on were designed to work together. Every employer has its own scheduling platform, login flow, and two-factor authentication. None of them sync. Johnny ends up managing the gaps between all of them manually.
  
@@ -37,7 +37,7 @@ He isn’t bad at organization. The problem is that none of the systems he relie
  
 ---
  
-## 🔥 Section 2 — The Problem
+## Section 2:  The Problem
  
 Johnny struggles to manage a constantly changing schedule across multiple employers, all using separate systems, separate logins, and separate verification steps. Even just seeing everything in one place becomes a task on its own.
  
@@ -63,10 +63,10 @@ Johnny struggles to manage a constantly changing schedule across multiple employ
  
 ### Observed Artifacts
  
-**🚑 The Calendar**  
+**The Calendar**  
 Johnny screenshots his Publix scheduling app, then manually places ambulance emoji stickers over dates to mark Vanderbilt and Nashville General shifts. Days off get hand-drawn X’s. This becomes his main scheduling interface.
  
-**📱 The Task System**  
+**The Task System**  
 For reminders, Johnny texts himself and edits or crosses things out directly in the message thread. No dedicated productivity app. No connection between tasks and the actual shifts they relate to.
  
 ### Pain Points
@@ -80,7 +80,7 @@ For reminders, Johnny texts himself and edits or crosses things out directly in 
  
 ---
  
-## 👂 Section 3 — The Listening Plan
+## Section 3 : The Listening Plan
  
 This wasn’t approached like a one-and-done interview. Johnny’s situation changes weekly. Shifts move around, commutes vary, and new friction points show up constantly.
  
@@ -93,13 +93,13 @@ This wasn’t approached like a one-and-done interview. Johnny’s situation cha
 | Natural observation | Ongoing | Observing how he actually interacts with schedules after shifts or during downtime |
  
 ### Research Ethics
-- ✅ Clear consent obtained before research began
-- ✅ Permission granted to take notes and reference quotes
-- ✅ Permission granted to use his information for this project
-- ✅ Research conducted during natural moments, not staged ones
+-  Clear consent obtained before research began
+-  Permission granted to take notes and reference quotes
+-  Permission granted to use his information for this project
+-  Research conducted during natural moments, not staged ones
 ---
  
-## ✅ Section 4 — What Help Looks Like
+##  Section 4 : What Help Looks Like
  
 Johnny defined this himself without prompting:
  
@@ -126,21 +126,21 @@ A **screenshot-to-schedule calendar app** that uses character recognition to pul
 **📸 OCR Screenshot Ingestion**  
 Upload or capture a schedule screenshot and the app automatically reads the information and creates calendar events without needing manual re-entry.
  
-**🏷️ Employer Tagging**  
+** Employer Tagging**  
 Every event gets tagged by employer (Vanderbilt, Nashville General, Publix) using visual color indicators so Johnny can scan an entire month view and immediately understand where he’s going.
  
-**✅ Day-Level Task Lists**  
+** Day-Level Task Lists**  
 Tap on a day, add tasks, and check them off throughout the day  directly connected to the shift instead of floating in a separate notes app or text thread.
  
-**↔️ Drag-and-Reschedule with Version History**  
+** Drag-and-Reschedule with Version History**  
 When shifts change last minute, updates are fast and reversible without needing new screenshots or sticker edits.
  
-**🚗 Commute-Aware Alerts**  
+** Commute-Aware Alerts**  
 A real-time "leave now" notification based on current location, destination facility, and live traffic conditions so commute calculations stop living in his head.
  
 ---
  
-## 🎯 Section 6 — Position Going In
+## Section 6 : Position Going In
  
 The core position: **eliminate the manual workaround loop**  the screenshots, stickers, edits, and mental tracking  by turning raw schedule information into structured, usable calendar events automatically. The user shouldn’t have to manage the same schedule twice.
  
@@ -155,7 +155,7 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
  
 ---
  
-## 🚫 Section 7 — What This Project Is Not
+## Section 7 : What This Project Is Not
  
 - ✕ **Not an offline-first machine** — Internet access is required for real-time traffic, commute alerts, and schedule syncing. Offline support is currently outside scope.
 - ✕ **Not a replacement for employer systems** — Cannot remove login requirements, two-factor authentication, or hospital restrictions imposed by Vanderbilt, Nashville General, or Publix. The tool works *around* existing systems, not *through* them.
