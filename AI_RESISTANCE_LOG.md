@@ -167,3 +167,19 @@ Pushed through every layer — forced proper error surfacing in the Edge Functio
 The integration that came out the other side is genuinely hardened. The Edge Function surfaces real Claude API errors instead of returning empty arrays. The model name is confirmed working. The markdown strip handles Claude's formatting inconsistency. The null filter handles Off/Holiday days. None of this would have existed if the integration had gone smoothly the first time. The struggle produced a more robust feature than a clean path would have.
 
 ---
+
+## Entry 11 — AI Would Have Used a Supabase Table for Categories
+
+**What AI would have given me:**
+A natural implementation of a categories system in a Supabase-backed app would add a `categories` table in PostgreSQL, with RLS, realtime subscription, and full sync across devices — mirroring how shifts and tasks are stored.
+
+**Why that would be wrong:**
+Categories are UI preferences, not shared data. Johnny uses this app alone. He's not collaborating with anyone who needs to see his custom category colors. A Supabase table for categories adds a schema migration, a new RLS policy, another realtime channel, and database reads on every category lookup — for data that a `localStorage` key handles just as well. The added complexity serves no user need.
+
+**What was done instead:**
+Categories are stored entirely in `localStorage` under `shiftstack_all_categories`. Built-in categories initialize on first load. Custom categories append to the same key. The `getCategoryByKey(key)` function resolves from the in-memory array on every render — no async, no loading state, no database round-trip.
+
+**Why it's better:**
+The categories feature shipped as pure UI state. No Supabase dashboard changes, no SQL to run, no migration. The existing shift records in Supabase store category keys (`publix`, `vanderbilt`, `nashville_general`, `custom_1234`). The display layer reads the key and looks it up in categories — so renaming a category or changing its color is instant and zero-cost. The tradeoff is that categories don't sync between devices (Johnny's phone and desktop would have different custom categories), but Johnny hasn't asked for that and the built-in three are always present on every device.
+
+---

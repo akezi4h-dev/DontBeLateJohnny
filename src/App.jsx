@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { ShiftsProvider } from './hooks/useShifts'
+import { CategoriesProvider } from './hooks/useCategories'
 import MonthView from './components/MonthView'
 import ShiftCard from './components/ShiftCard'
 import AddShift from './components/AddShift'
 import OCRUpload from './components/OCRUpload'
 import Login from './components/Login'
 import BottomNav from './components/BottomNav'
+import Toast from './components/Toast'
+import Confetti from './components/Confetti'
 
 function todayISO() {
   const d = new Date()
@@ -17,6 +20,15 @@ function MainApp() {
   const { signOut } = useAuth()
   const [selectedDate, setSelectedDate] = useState(null)
   const [screen, setScreen] = useState('month') // month | add | upload
+
+  // Celebration state
+  const [toast, setToast] = useState(null)        // { emoji, text } | null
+  const [confetti, setConfetti] = useState(false)
+
+  const celebrate = useCallback(({ emoji, text, withConfetti = false }) => {
+    setToast({ emoji, text })
+    if (withConfetti) setConfetti(true)
+  }, [])
 
   const handleTabChange = (tab) => {
     if (tab === 'today') {
@@ -34,8 +46,25 @@ function MainApp() {
     }
   }
 
-  if (screen === 'add') return <AddShift onBack={() => setScreen('month')} />
-  if (screen === 'upload') return <OCRUpload onBack={() => setScreen('month')} />
+  if (screen === 'add') {
+    return (
+      <AddShift
+        onBack={() => setScreen('month')}
+        onSuccess={() => celebrate({ emoji: '✅', text: 'Shift saved!' })}
+        onNewCategory={() => celebrate({ emoji: '🎨', text: 'Category created!', withConfetti: true })}
+      />
+    )
+  }
+
+  if (screen === 'upload') {
+    return (
+      <OCRUpload
+        onBack={() => setScreen('month')}
+        onSuccess={(count) => celebrate({ emoji: '🎉', text: `${count} shift${count !== 1 ? 's' : ''} added!` })}
+        onNewCategory={() => celebrate({ emoji: '🎨', text: 'Category created!', withConfetti: true })}
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -57,7 +86,8 @@ function MainApp() {
         {/* Shift card / placeholder */}
         {selectedDate ? (
           <div className="md:w-1/2 md:overflow-y-auto flex flex-col min-h-screen md:min-h-0">
-            <ShiftCard date={selectedDate} onBack={() => setSelectedDate(null)} />
+            {/* key={selectedDate} remounts on date change — triggers slide-in animation */}
+            <ShiftCard key={selectedDate} date={selectedDate} onBack={() => setSelectedDate(null)} />
           </div>
         ) : (
           <div className="hidden md:flex md:w-1/2 items-center justify-center text-white/20 flex-col gap-3">
@@ -73,6 +103,16 @@ function MainApp() {
       </div>
 
       <BottomNav onTabChange={handleTabChange} />
+
+      {/* Celebration overlays */}
+      {toast && (
+        <Toast
+          emoji={toast.emoji}
+          text={toast.text}
+          onDone={() => setToast(null)}
+        />
+      )}
+      {confetti && <Confetti onDone={() => setConfetti(false)} />}
     </div>
   )
 }
@@ -91,8 +131,10 @@ export default function App() {
   if (!user) return <Login />
 
   return (
-    <ShiftsProvider>
-      <MainApp />
-    </ShiftsProvider>
+    <CategoriesProvider>
+      <ShiftsProvider>
+        <MainApp />
+      </ShiftsProvider>
+    </CategoriesProvider>
   )
 }

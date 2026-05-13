@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { getCalendarDays, toISODate, isToday, DAY_LABELS, MONTH_NAMES } from '../utils/dateHelpers'
-import { useShifts, EMPLOYER_COLORS } from '../hooks/useShifts'
+import { useShifts } from '../hooks/useShifts'
+import { useCategories } from '../hooks/useCategories'
 
 export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, onSignOut }) {
   const today = new Date()
-  const [year, setYear] = useState(today.getFullYear())
+  const [year, setYear]   = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+
   const { getShiftsForDate } = useShifts()
+  const { categories, getCategoryByKey } = useCategories()
 
   const cells = getCalendarDays(year, month)
 
@@ -24,6 +27,14 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
     setYear(today.getFullYear())
     setMonth(today.getMonth())
   }
+
+  // Collect category keys actually used this month for the legend
+  const usedKeys = new Set(
+    cells
+      .filter(Boolean)
+      .flatMap((day) => getShiftsForDate(toISODate(year, month, day)).map((s) => s.employer))
+  )
+  const legendCategories = categories.filter((c) => usedKeys.has(c.key))
 
   return (
     <div className="flex flex-col h-full select-none">
@@ -100,10 +111,10 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
         {cells.map((day, i) => {
           if (!day) return <div key={`empty-${i}`} />
 
-          const dateStr = toISODate(year, month, day)
-          const shifts = getShiftsForDate(dateStr)
+          const dateStr   = toISODate(year, month, day)
+          const shifts    = getShiftsForDate(dateStr)
           const todayBadge = isToday(year, month, day)
-          const selected = selectedDate === dateStr
+          const selected  = selectedDate === dateStr
 
           return (
             <button
@@ -114,44 +125,56 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
                 ${selected ? 'bg-white/15 ring-1 ring-white/30' : 'hover:bg-white/5'}
               `}
             >
-              {/* Date number */}
+              {/* Date number with pulse on today */}
               <span
                 className={`
                   text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1 transition-colors
-                  ${todayBadge ? 'bg-white text-black font-bold' : 'text-white/80'}
+                  ${todayBadge ? 'bg-white text-black font-bold animate-pulse-ring' : 'text-white/80'}
                 `}
               >
                 {day}
               </span>
 
-              {/* Employer dots */}
-              <div className="flex flex-wrap gap-0.5 justify-center max-w-[40px]">
-                {shifts.map((shift) => (
-                  <span
-                    key={shift.id}
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: EMPLOYER_COLORS[shift.employer] }}
-                  />
-                ))}
+              {/* Emoji shift indicators */}
+              <div className="flex flex-wrap gap-px justify-center max-w-[44px]">
+                {shifts.slice(0, 3).map((shift) => {
+                  const cat = getCategoryByKey(shift.employer)
+                  return (
+                    <span
+                      key={shift.id}
+                      className="text-[11px] leading-none"
+                      title={cat.name}
+                    >
+                      {cat.emoji}
+                    </span>
+                  )
+                })}
+                {shifts.length > 3 && (
+                  <span className="text-[9px] text-white/40 leading-none">
+                    +{shifts.length - 3}
+                  </span>
+                )}
               </div>
             </button>
           )
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4 px-4 pb-4 pt-3 border-t border-white/5 flex-wrap">
-        {Object.entries(EMPLOYER_COLORS).map(([key, color]) => (
-          key !== 'other' && (
-            <div key={key} className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color }} />
-              <span className="text-xs text-white/40">
-                {key === 'publix' ? 'Publix' : key === 'vanderbilt' ? 'Vanderbilt' : 'Nashville Gen'}
-              </span>
+      {/* Legend — only shows categories used this month */}
+      {legendCategories.length > 0 && (
+        <div className="flex gap-4 px-4 pb-4 pt-3 border-t border-white/5 flex-wrap">
+          {legendCategories.map((cat) => (
+            <div key={cat.key} className="flex items-center gap-1.5">
+              <span className="text-sm leading-none">{cat.emoji}</span>
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: cat.color }}
+              />
+              <span className="text-xs text-white/40">{cat.name}</span>
             </div>
-          )
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

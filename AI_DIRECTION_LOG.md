@@ -240,6 +240,33 @@ Accepted. The employer selection step solves two problems at once: it replaces u
 
 ---
 
+## Entry 19 — Custom Categories System
+
+**Asked:**
+Replace the hardcoded "Other" employer option with a fully custom category system. Each category: text name, color picker (preset palettes + custom hex), emoji picker (curated grid). Show a live preview before saving. Allow editing built-in categories (rename, recolor, re-emoji) — changes propagate to all existing shifts instantly since shifts store only the key. Add confetti burst on new category creation, celebration toast on successful import ("🎉 3 shifts added!"), preset color palettes (Neon, Pastel, Dark Mode, Retro), pulse animation on today's calendar dot, and slide-in animation on the shift detail panel.
+
+**Produced:**
+Seven new or updated files:
+
+1. **`src/hooks/useCategories.jsx`** — New React Context. Stores all categories (built-in + custom) in a single `shiftstack_all_categories` localStorage key. Built-ins initialize on first load. Exports `getCategoryByKey(key)` (returns FALLBACK_CATEGORY if key not found — safe for existing Supabase records), `createCategory`, `updateCategory` (works on any category including built-ins), `deleteCategory` (blocked for built-ins). Exports `PALETTE_PRESETS` (Neon, Pastel, Dark Mode, Retro), `EMOJI_OPTIONS` (30 curated emoji), `BUILTIN_CATEGORIES`.
+
+2. **`src/components/CategoryEditor.jsx`** — Bottom-sheet modal with name input (autofocused), 30-emoji curated grid (emoji highlighted and outlined when selected), palette tab switcher with 6 swatches each + custom hex color input via `<input type="color">`, and live preview card showing the exact same layout as ShiftCard's hero. Save button color matches current selection.
+
+3. **`src/components/Toast.jsx`** — Fixed-position overlay that slides up from bottom, holds for 2.8s, fades out. Phase-based state machine (`enter` → `show` → `exit`) prevents the `onDone` callback from firing on first render.
+
+4. **`src/components/Confetti.jsx`** — Canvas-based confetti burst. 90 particles (mix of rectangles and circles) burst from viewport center, with gravity (0.42), air resistance (0.988), rotation, and spin. Alpha fades over 85 frames. Calls `onDone` when animation completes.
+
+5. **`src/index.css`** — Added `@keyframes slide-in-right` (28px translateX → 0, opacity 0 → 1) and `@keyframes pulse-ring` (box-shadow pulse). CSS classes `.animate-slide-in` and `.animate-pulse-ring`.
+
+6. **`src/App.jsx`** — Wrapped in `CategoriesProvider`. Added `toast` and `confetti` state. `celebrate({ emoji, text, withConfetti })` callback passed to AddShift and OCRUpload. Renders `<Toast>` and `<Confetti>` as fixed overlays. Added `key={selectedDate}` to ShiftCard so it remounts on date change, triggering slide-in.
+
+7. **Updated** `MonthView`, `ShiftCard`, `AddShift`, `OCRUpload` — all switched from `EMPLOYER_COLORS`/`EMPLOYER_NAMES` to `useCategories`. MonthView shows emoji as shift indicators (up to 3 per day, `+N` overflow), legend dynamically shows only categories used in the current month (emoji + color dot + name). ShiftCard shows emoji in the hero card header alongside the employer name, with `animate-slide-in` on root. AddShift shows emoji + name buttons, "+ New Category" dashed button, pencil "Edit" link for the selected category. OCRUpload employer list is fully dynamic with "+ New Category" button.
+
+**Decided:**
+Accepted. The localStorage-only approach (no Supabase table for categories) is correct for this app — categories are UI preferences, not shared data. The `getCategoryByKey` fallback pattern ensures all existing Supabase shift records (which store `publix`, `vanderbilt`, `nashville_general` as the employer key) continue to resolve correctly without any data migration. Confetti on category creation is intentional delight for a one-time flow. Toast on import closes the feedback loop that was previously silent.
+
+---
+
 ## Entry 17 — am/pm Instead of a/p
 
 **Asked:**

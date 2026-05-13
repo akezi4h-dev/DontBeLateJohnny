@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useShifts, EMPLOYER_COLORS, EMPLOYER_NAMES } from '../hooks/useShifts'
+import { useShifts } from '../hooks/useShifts'
+import { useCategories } from '../hooks/useCategories'
 import { useTasks } from '../hooks/useTasks'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 
 function TaskRow({ task, onToggle, onRemove }) {
-  const color = '#00A651' // checkmark always green — neutral, not shift-dependent
+  const color = '#00A651'
   return (
     <div className="flex items-center gap-3 py-2.5 group border-b border-white/5 last:border-0">
       <button
@@ -26,7 +27,10 @@ function TaskRow({ task, onToggle, onRemove }) {
 
       <span
         className="flex-1 text-sm transition-all duration-300"
-        style={task.completed ? { textDecoration: 'line-through', color: 'rgba(255,255,255,0.25)' } : { color: 'rgba(255,255,255,0.85)' }}
+        style={task.completed
+          ? { textDecoration: 'line-through', color: 'rgba(255,255,255,0.25)' }
+          : { color: 'rgba(255,255,255,0.85)' }
+        }
       >
         {task.text}
       </span>
@@ -43,6 +47,7 @@ function TaskRow({ task, onToggle, onRemove }) {
 
 export default function ShiftCard({ date, onBack }) {
   const { getShiftsForDate } = useShifts()
+  const { getCategoryByKey } = useCategories()
   const shifts = getShiftsForDate(date)
   const [activeIdx, setActiveIdx] = useState(0)
   const [newTask, setNewTask] = useState('')
@@ -50,13 +55,13 @@ export default function ShiftCard({ date, onBack }) {
   const shift = shifts[activeIdx] ?? null
   const { tasks, addTask, toggleTask, removeTask } = useTasks(shift?.id ?? null)
 
-  const facility = shift ? (FACILITY_INFO[shift.employer] ?? FACILITY_INFO.other) : null
-  const color = shift ? EMPLOYER_COLORS[shift.employer] : '#6B7280'
-  const employerName = shift ? EMPLOYER_NAMES[shift.employer] : ''
+  const category     = shift ? getCategoryByKey(shift.employer) : null
+  const color        = category?.color ?? '#6B7280'
+  const employerName = category?.name  ?? ''
+  const emoji        = category?.emoji ?? ''
 
-  const leaveTime = shift
-    ? subtractMinutes(shift.startTime, facility.driveMinutes)
-    : null
+  const facility  = shift ? (FACILITY_INFO[shift.employer] ?? FACILITY_INFO.other) : null
+  const leaveTime = shift ? subtractMinutes(shift.startTime, facility.driveMinutes) : null
 
   const handleAddTask = (e) => {
     e.preventDefault()
@@ -81,13 +86,13 @@ export default function ShiftCard({ date, onBack }) {
     }
   }
 
-  // Parse display date
-  const dateObj = new Date(`${date}T12:00:00`)
-  const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' })
+  const dateObj     = new Date(`${date}T12:00:00`)
+  const dayName     = dateObj.toLocaleDateString('en-US', { weekday: 'long' })
   const dateDisplay = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })
 
   return (
-    <div className="flex flex-col min-h-full bg-[#0f0f0f] pb-24 md:pb-8">
+    // animate-slide-in triggers on mount; key={date} in App.jsx remounts on each date change
+    <div className="flex flex-col min-h-full bg-[#0f0f0f] pb-24 md:pb-8 animate-slide-in">
 
       {/* Header */}
       <div className="flex items-center gap-2 px-4 pt-6 pb-3">
@@ -117,20 +122,24 @@ export default function ShiftCard({ date, onBack }) {
       {/* Shift tabs (multiple shifts same day) */}
       {shifts.length > 1 && (
         <div className="flex gap-2 px-4 pb-3">
-          {shifts.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => setActiveIdx(i)}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={
-                i === activeIdx
-                  ? { backgroundColor: EMPLOYER_COLORS[s.employer], color: '#0f0f0f' }
-                  : { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
-              }
-            >
-              {EMPLOYER_NAMES[s.employer]}
-            </button>
-          ))}
+          {shifts.map((s, i) => {
+            const cat = getCategoryByKey(s.employer)
+            return (
+              <button
+                key={s.id}
+                onClick={() => setActiveIdx(i)}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5"
+                style={
+                  i === activeIdx
+                    ? { backgroundColor: cat.color, color: '#0f0f0f' }
+                    : { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
+                }
+              >
+                <span>{cat.emoji}</span>
+                <span>{cat.name}</span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -138,7 +147,7 @@ export default function ShiftCard({ date, onBack }) {
       {shift && (
         <div className="flex flex-col gap-3 px-4">
 
-          {/* Hero card: employer + time */}
+          {/* Hero card: emoji + employer + time */}
           <div
             className="rounded-2xl p-5"
             style={{
@@ -146,11 +155,14 @@ export default function ShiftCard({ date, onBack }) {
               borderLeft: `4px solid ${color}`,
             }}
           >
-            <div
-              className="text-xs font-bold uppercase tracking-widest mb-2"
-              style={{ color }}
-            >
-              {employerName}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl leading-none">{emoji}</span>
+              <div
+                className="text-xs font-bold uppercase tracking-widest"
+                style={{ color }}
+              >
+                {employerName}
+              </div>
             </div>
             <div
               className="font-black leading-none mb-3 tracking-tight"
