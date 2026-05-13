@@ -210,7 +210,7 @@ Every choice traces back to Johnny:
 | **Responsive, not mobile-only** | He uses his laptop at work to set up his week. He uses his iPhone while walking between locations. Two modes, one app. |
 | **React + Vite** | Component structure maps directly to the UI: month view, shift cards, task lists — each discrete, stateful |
 | **Tailwind** | He said *"fun, customizable, colorful."* Tailwind makes rapid visual iteration fast |
-| **Vercel** | One-click deploy from GitHub. Johnny gets a URL, opens in Safari, adds to home screen in under a minute |
+| **Githubpages** | One-click deploy from GitHub. Johnny gets a URL, opens in Safari, adds to home screen in under a minute |
 | **OneSignal** | Commute alerts need to hit a locked screen. OneSignal handles server-side scheduling without a backend |
  
 > *Johnny manages his schedule on his laptop at work and checks it on his iPhone while walking  the app needs to be fully functional on both, with a setup mode on desktop and a glance mode on mobile.*
