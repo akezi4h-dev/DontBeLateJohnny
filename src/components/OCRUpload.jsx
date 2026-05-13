@@ -46,13 +46,15 @@ export default function OCRUpload({ onBack }) {
       const raw = typeof data === 'string' ? JSON.parse(data) : data
       const shifts = Array.isArray(raw) ? raw : []
 
-      const detected = shifts.map((s) => ({
-        employer: detectEmployer(s.location ?? s.role ?? ''),
-        date: s.date,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        notes: s.role ?? '',
-      }))
+      const detected = shifts
+        .filter((s) => s.startTime && s.endTime)
+        .map((s) => ({
+          employer: detectEmployer(s.location ?? s.role ?? ''),
+          date: s.date,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          notes: s.role ?? '',
+        }))
 
       if (detected.length === 0) {
         setStage('idle')
