@@ -235,10 +235,10 @@ Every choice traces back to Johnny:
 | **Dark mode only** | *"Dark mode"* — his direct answer |
 | **Bold distinct color per employer** | *"Different colors for different jobs would be nice"* |
 | **Shift times as visual hero** | *"Yes to shift times"* |
-| **Fun, personality-forward** | Sent a groundhog meme. Said *"fun."* Has never used a calendar app before — no competing aesthetic to match |
+| **Fun, personality-forward** | Said *"fun."* Has never used a calendar app before no competing aesthetic to match |
 | **No manual entry as default** | *"Sounds annoying to manually add lol"* |
 
-## Employer Colors
+### Employer Colors
  
 | Employer | Color | Hex |
 |---|---|---|
@@ -247,7 +247,7 @@ Every choice traces back to Johnny:
 | 🔵 Nashville General | Blue | `#2D6DB5` |
 | ⚫ Personal / Off | Gray | `#3A3A3A` |
 
-## Typography
+### Typography
  
 | Use | Font | Weight |
 |---|---|---|
