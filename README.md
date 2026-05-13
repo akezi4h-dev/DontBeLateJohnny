@@ -44,6 +44,7 @@ He isn’t bad at organization. The problem is that none of the systems he relie
  
 Johnny struggles to manage a constantly changing schedule across multiple employers, all using separate systems, separate logins, and separate verification steps. Even just seeing everything in one place becomes a task on its own.
  
+
 ## Research Documentation
  
 
@@ -66,7 +67,17 @@ Johnny struggles to manage a constantly changing schedule across multiple employ
  
 > *"My problems revolve around commute times and making sure I got the necessary time/bandwidth to take care of the things I need to do."*
 > — On what the actual problem is underneath everything else
- 
+
+### His Current System
+```
+Screenshot Publix calendar (Science Provider app)
+  → Manually place 🚑 emoji stickers on dates for Vanderbilt + Nashville General
+    → Mark days off with X
+      → Text himself task reminders
+        → Cross them out in the iMessage thread
+        
+```
+
 ### Observed Artifacts
  
 **The Calendar**  
@@ -156,20 +167,16 @@ A **screenshot-to-schedule calendar app** that uses character recognition to pul
  
 ### Core Features
  
-**OCR Screenshot Ingestion**  
-Upload or capture a schedule screenshot and the app automatically reads the information and creates calendar events without needing manual re-entry.
- 
-**Employer Tagging**  
-Every event gets tagged by employer (Vanderbilt, Nashville General, Publix) using visual color indicators so Johnny can scan an entire month view and immediately understand where he’s going.
- 
-**Day-Level Task Lists**  
-Tap on a day, add tasks, and check them off throughout the day  directly connected to the shift instead of floating in a separate notes app or text thread.
- 
-**Drag-and-Reschedule with Version History**  
-When shifts change last minute, updates are fast and reversible without needing new screenshots or sticker edits.
- 
-**Commute-Aware Alerts**  
-A real-time "leave now" notification based on current location, destination facility, and live traffic conditions so commute calculations stop living in his head.
+| Feature | Grounded In |
+|---|---|
+| 📸 **Screenshot → OCR → Auto-populate** | *"Sounds annoying to manually add lol"* + his entire workaround is screenshot-based |
+| 🏷️ **Employer color tags on month view** | *"Differentiate my days"* |
+| 📅 **Day/shift card with big time display** | *"When I click on the day"* + *"Yes to shift times"* |
+| ✅ **Per-shift task checklist** | *"Add tasks to do and cross them off as I go"* |
+| 🚗 **Commute-aware leave alert** | *"My problems revolve around commute times"* |
+| 🔔 **OneSignal lock screen notification** | Commute alerts need to reach a locked screen |
+| ↔️ **Drag-to-reschedule** | *"Paint/photoshop my shit"* when things change |
+| 📱 **Installable to iPhone home screen** | He checks it while walking between locations |
  
 ---
  
@@ -221,3 +228,30 @@ Every choice traces back to Johnny:
 # Section 10 : Prototype Process
 
  
+## Visual Style
+ 
+| Decision | Source |
+|---|---|
+| **Dark mode only** | *"Dark mode"* — his direct answer |
+| **Bold distinct color per employer** | *"Different colors for different jobs would be nice"* |
+| **Shift times as visual hero** | *"Yes to shift times"* |
+| **Fun, personality-forward** | Sent a groundhog meme. Said *"fun."* Has never used a calendar app before — no competing aesthetic to match |
+| **No manual entry as default** | *"Sounds annoying to manually add lol"* |
+
+## Employer Colors
+ 
+| Employer | Color | Hex |
+|---|---|---|
+| 🟢 Publix | Green | `#00A651` |
+| 🟡 Vanderbilt | Gold | `#CFB87C` |
+| 🔵 Nashville General | Blue | `#2D6DB5` |
+| ⚫ Personal / Off | Gray | `#3A3A3A` |
+
+## Typography
+ 
+| Use | Font | Weight |
+|---|---|---|
+| App name / display | Syne | 800 |
+| Shift times (hero element) | Syne | 800 · 42px minimum |
+| Employer names / headings | Syne | 700 |
+| Body / UI / labels | Space Grotesk | 400 · 500 |
