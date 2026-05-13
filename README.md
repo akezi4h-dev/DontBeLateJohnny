@@ -68,6 +68,13 @@ Johnny struggles to manage a constantly changing schedule across multiple employ
  
 **The Calendar**  
 Johnny screenshots his Publix scheduling app, then manually places ambulance emoji stickers over dates to mark Vanderbilt and Nashville General shifts. Days off get hand-drawn X’s. This becomes his main scheduling interface.
+
+<table>
+<tr>
+<td><img src="docs/johnny-calendar-may.jpg.png" alt="Johnny’s May 2026 schedule — Publix app with ambulance stickers and hand-drawn X’s" width="340"></td>
+<td><img src="docs/johnny-calendar-april.png" alt="Johnny’s April 2026 schedule — same system, showing the ambulance sticker method up close" width="340"></td>
+</tr>
+</table>
  
 **The Task System**  
 For reminders, Johnny texts himself and edits or crosses things out directly in the message thread. No dedicated productivity app. No connection between tasks and the actual shifts they relate to.
