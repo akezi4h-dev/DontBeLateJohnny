@@ -3,16 +3,16 @@ import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 
 const GREETINGS = [
-  'Hey Johnny 👋',
+  'Hey Johnny',
   "What's up Johnny",
-  'Hello Johnny 🙂',
-  'Yo Johnny 🤙',
+  'Hello Johnny',
+  'Yo Johnny',
   "How's it going Johnny",
   'Welcome back Johnny',
-  "Good to see you Johnny",
+  'Good to see you Johnny',
   "What's good Johnny",
-  'Sup Johnny 🫡',
-  "Ready to go Johnny?",
+  'Sup Johnny',
+  'Ready to go Johnny',
 ]
 
 function todayISO() {
