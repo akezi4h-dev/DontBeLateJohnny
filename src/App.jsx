@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { ShiftsProvider } from './hooks/useShifts'
 import { CategoriesProvider } from './hooks/useCategories'
+import { TasksProvider } from './hooks/useTasks.jsx'
 import { useShifts } from './hooks/useShifts'
 import { useCategories } from './hooks/useCategories'
 import MonthView from './components/MonthView'
@@ -177,7 +178,9 @@ export default function App() {
   return (
     <CategoriesProvider>
       <ShiftsProvider>
-        <MainApp />
+        <TasksProvider>
+          <MainApp />
+        </TasksProvider>
       </ShiftsProvider>
     </CategoriesProvider>
   )

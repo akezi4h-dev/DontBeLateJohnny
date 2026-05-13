@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { getCalendarDays, toISODate, isToday, DAY_LABELS, MONTH_NAMES } from '../utils/dateHelpers'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
+import { useTasks } from '../hooks/useTasks.jsx'
 
 const DRAG_THRESHOLD = 8 // px of movement before drag begins
 
@@ -23,6 +24,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
 
   const { getShiftsForDate, updateShift } = useShifts()
   const { getCategoryByKey } = useCategories()
+  const { hasTasksForShift, allDoneForShift } = useTasks()
 
   const cells = getCalendarDays(year, month)
 
@@ -223,6 +225,8 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
           const selected   = selectedDate === dateStr
           const isDragOver = dragOverDate === dateStr
           const isSource   = draggingShift !== null && shifts.some((s) => s.id === draggingShift.id)
+          const hasTasks   = shifts.some((s) => hasTasksForShift(s.id))
+          const allDone    = hasTasks && shifts.every((s) => !hasTasksForShift(s.id) || allDoneForShift(s.id))
 
           return (
             <button
@@ -287,6 +291,16 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
                   </span>
                 )}
               </div>
+
+              {/* Task indicator — dot when tasks exist, green check when all done */}
+              {hasTasks && (
+                <span
+                  className="text-[8px] leading-none mt-px"
+                  style={{ color: allDone ? 'rgba(74,222,128,0.7)' : 'rgba(255,255,255,0.28)' }}
+                >
+                  {allDone ? '✓' : '·'}
+                </span>
+              )}
             </button>
           )
         })}

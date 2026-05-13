@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
-import { useTasks } from '../hooks/useTasks'
+import { useTasks } from '../hooks/useTasks.jsx'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 
@@ -69,7 +69,8 @@ export default function ShiftCard({ date, onBack }) {
   const [deleting, setDeleting]           = useState(false)
 
   const shift = shifts[activeIdx] ?? null
-  const { tasks, addTask, toggleTask, removeTask } = useTasks(shift?.id ?? null)
+  const { getTasksForShift, addTask, toggleTask, removeTask } = useTasks()
+  const tasks = shift ? getTasksForShift(shift.id) : []
 
   // Sync notes value when the shift changes (realtime updates)
   useEffect(() => {
@@ -145,7 +146,7 @@ export default function ShiftCard({ date, onBack }) {
 
   const handleAddTask = (e) => {
     e.preventDefault()
-    if (newTask.trim()) { addTask(newTask.trim()); setNewTask('') }
+    if (newTask.trim() && shift) { addTask(shift.id, newTask.trim()); setNewTask('') }
   }
 
   const handleRemind = () => {
