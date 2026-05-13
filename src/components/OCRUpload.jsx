@@ -20,19 +20,22 @@ export default function OCRUpload({ onBack }) {
       const url = URL.createObjectURL(file)
       img.onload = () => {
         const canvas = document.createElement('canvas')
-        // Scale up 2x so small phone text is easier to read
-        canvas.width = img.width * 2
-        canvas.height = img.height * 2
+        // 3x scale — phone screenshots have small text
+        canvas.width = img.width * 3
+        canvas.height = img.height * 3
         const ctx = canvas.getContext('2d')
         ctx.imageSmoothingEnabled = false
-        ctx.scale(2, 2)
+        ctx.scale(3, 3)
         ctx.drawImage(img, 0, 0)
-        // Invert colors — Tesseract needs dark text on light background
+        // Invert + binarize: dark-mode screenshots need light bg / dark text
         const d = ctx.getImageData(0, 0, canvas.width, canvas.height)
         for (let i = 0; i < d.data.length; i += 4) {
-          d.data[i] = 255 - d.data[i]
-          d.data[i + 1] = 255 - d.data[i + 1]
-          d.data[i + 2] = 255 - d.data[i + 2]
+          const r = 255 - d.data[i]
+          const g = 255 - d.data[i + 1]
+          const b = 255 - d.data[i + 2]
+          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
+          const val = gray > 128 ? 255 : 0
+          d.data[i] = val; d.data[i + 1] = val; d.data[i + 2] = val
         }
         ctx.putImageData(d, 0, 0)
         URL.revokeObjectURL(url)
@@ -53,6 +56,8 @@ export default function OCRUpload({ onBack }) {
           if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100))
         },
       })
+      // PSM 11: sparse text — treats the image as scattered text, not a document
+      await worker.setParameters({ tessedit_pageseg_mode: '11' })
       const canvas = await preprocessForOCR(file)
       const { data: { text } } = await worker.recognize(canvas)
       await worker.terminate()
