@@ -86,6 +86,23 @@ export function ShiftsProvider({ children }) {
     return rowToShift(row)
   }
 
+  const updateShift = async (id, data) => {
+    const { data: row, error } = await supabase
+      .from('shifts')
+      .update({
+        employer:   data.employer,
+        date:       data.date,
+        start_time: data.startTime,
+        end_time:   data.endTime,
+        notes:      data.notes ?? '',
+      })
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    return rowToShift(row)
+  }
+
   const removeShift = async (id) => {
     await supabase.from('shifts').delete().eq('id', id)
   }
@@ -93,7 +110,7 @@ export function ShiftsProvider({ children }) {
   const getShiftsForDate = (date) => shifts.filter((s) => s.date === date)
 
   return (
-    <ShiftsContext.Provider value={{ shifts, loading, addShift, removeShift, getShiftsForDate }}>
+    <ShiftsContext.Provider value={{ shifts, loading, addShift, updateShift, removeShift, getShiftsForDate }}>
       {children}
     </ShiftsContext.Provider>
   )

@@ -46,14 +46,51 @@ function TaskRow({ task, onToggle, onRemove }) {
 }
 
 export default function ShiftCard({ date, onBack }) {
-  const { getShiftsForDate } = useShifts()
+  const { getShiftsForDate, updateShift } = useShifts()
   const { getCategoryByKey } = useCategories()
   const shifts = getShiftsForDate(date)
   const [activeIdx, setActiveIdx] = useState(0)
   const [newTask, setNewTask] = useState('')
 
+  // Edit mode state
+  const [editing, setEditing]     = useState(false)
+  const [editStart, setEditStart] = useState('')
+  const [editEnd, setEditEnd]     = useState('')
+  const [editDate, setEditDate]   = useState('')
+  const [editNotes, setEditNotes] = useState('')
+  const [saving, setSaving]       = useState(false)
+
   const shift = shifts[activeIdx] ?? null
   const { tasks, addTask, toggleTask, removeTask } = useTasks(shift?.id ?? null)
+
+  const startEdit = () => {
+    if (!shift) return
+    setEditStart(shift.startTime)
+    setEditEnd(shift.endTime)
+    setEditDate(shift.date)
+    setEditNotes(shift.notes ?? '')
+    setEditing(true)
+  }
+
+  const cancelEdit = () => setEditing(false)
+
+  const handleSave = async () => {
+    if (!shift) return
+    setSaving(true)
+    try {
+      await updateShift(shift.id, {
+        employer:  shift.employer,
+        date:      editDate,
+        startTime: editStart,
+        endTime:   editEnd,
+        notes:     editNotes,
+      })
+      setEditing(false)
+    } catch (e) {
+      console.error(e)
+    }
+    setSaving(false)
+  }
 
   const category     = shift ? getCategoryByKey(shift.employer) : null
   const color        = category?.color ?? '#6B7280'
@@ -155,24 +192,110 @@ export default function ShiftCard({ date, onBack }) {
               borderLeft: `4px solid ${color}`,
             }}
           >
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl leading-none">{emoji}</span>
-              <div
-                className="text-xs font-bold uppercase tracking-widest"
-                style={{ color }}
-              >
-                {employerName}
+            {/* Header row: emoji + name + edit button */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl leading-none">{emoji}</span>
+                <div className="text-xs font-bold uppercase tracking-widest" style={{ color }}>
+                  {employerName}
+                </div>
               </div>
+              {!editing && (
+                <button
+                  onClick={startEdit}
+                  className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-white/10 active:bg-white/20"
+                  title="Edit shift"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              )}
             </div>
-            <div
-              className="font-black leading-none mb-3 tracking-tight"
-              style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', color: '#fff' }}
-            >
-              {formatTime(shift.startTime)}&thinsp;→&thinsp;{formatTime(shift.endTime)}
-            </div>
-            <div className="text-white/60 text-sm font-medium">{facility.name}</div>
-            {facility.address && (
-              <div className="text-white/35 text-xs mt-0.5">{facility.address}</div>
+
+            {editing ? (
+              /* ── Edit form ── */
+              <div className="space-y-3 mt-1">
+                {/* Date */}
+                <div>
+                  <label className="text-white/35 text-[10px] uppercase tracking-widest block mb-1">Date</label>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full rounded-xl px-3 py-2.5 text-white text-sm outline-none"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.08)', colorScheme: 'dark' }}
+                  />
+                </div>
+                {/* Times */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-white/35 text-[10px] uppercase tracking-widest block mb-1">Start</label>
+                    <input
+                      type="time"
+                      value={editStart}
+                      onChange={(e) => setEditStart(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2.5 text-white text-sm outline-none"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', colorScheme: 'dark' }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white/35 text-[10px] uppercase tracking-widest block mb-1">End</label>
+                    <input
+                      type="time"
+                      value={editEnd}
+                      onChange={(e) => setEditEnd(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2.5 text-white text-sm outline-none"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.08)', colorScheme: 'dark' }}
+                    />
+                  </div>
+                </div>
+                {/* Notes */}
+                <div>
+                  <label className="text-white/35 text-[10px] uppercase tracking-widest block mb-1">Notes</label>
+                  <input
+                    type="text"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="Optional"
+                    className="w-full rounded-xl px-3 py-2.5 text-white placeholder-white/20 text-sm outline-none"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
+                  />
+                </div>
+                {/* Save / Cancel */}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={cancelEdit}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+                    style={{ backgroundColor: color, color: '#0f0f0f', fontFamily: "'Syne', sans-serif" }}
+                  >
+                    {saving ? 'Saving…' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* ── Display mode ── */
+              <>
+                <div
+                  className="font-black leading-none mb-3 tracking-tight"
+                  style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(2.5rem, 8vw, 3.5rem)', color: '#fff' }}
+                >
+                  {formatTime(shift.startTime)}&thinsp;→&thinsp;{formatTime(shift.endTime)}
+                </div>
+                <div className="text-white/60 text-sm font-medium">{facility.name}</div>
+                {facility.address && (
+                  <div className="text-white/35 text-xs mt-0.5">{facility.address}</div>
+                )}
+              </>
             )}
           </div>
 
