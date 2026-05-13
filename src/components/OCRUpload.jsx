@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useShifts, EMPLOYER_COLORS, EMPLOYER_NAMES } from '../hooks/useShifts'
-import { parseScheduleText } from '../utils/parseSchedule'
 import { formatTime } from '../utils/dateHelpers'
+import { supabase } from '../lib/supabase'
 
 const EMPLOYERS = Object.keys(EMPLOYER_NAMES)
 
@@ -14,72 +14,64 @@ export default function OCRUpload({ onBack }) {
   const [selected, setSelected] = useState({})
   const [saving, setSaving] = useState(false)
 
-  const preprocessForOCR = (file) =>
-    new Promise((resolve) => {
-      const img = new Image()
-      const url = URL.createObjectURL(file)
-      img.onload = () => {
-        const canvas = document.createElement('canvas')
-        // 3x scale — phone screenshots have small text
-        canvas.width = img.width * 3
-        canvas.height = img.height * 3
-        const ctx = canvas.getContext('2d')
-        ctx.imageSmoothingEnabled = false
-        ctx.scale(3, 3)
-        ctx.drawImage(img, 0, 0)
-        // Invert + binarize: dark-mode screenshots need light bg / dark text
-        const d = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        for (let i = 0; i < d.data.length; i += 4) {
-          const r = 255 - d.data[i]
-          const g = 255 - d.data[i + 1]
-          const b = 255 - d.data[i + 2]
-          const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
-          const val = gray > 128 ? 255 : 0
-          d.data[i] = val; d.data[i + 1] = val; d.data[i + 2] = val
-        }
-        ctx.putImageData(d, 0, 0)
-        URL.revokeObjectURL(url)
-        resolve(canvas)
-      }
-      img.src = url
+  const toBase64 = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result.split(',')[1])
+      reader.onerror = reject
+      reader.readAsDataURL(file)
     })
 
   const handleFile = async (file) => {
     if (!file) return
     setStage('processing')
-    setProgress(0)
+    setProgress(50)
 
     try {
-      const { createWorker } = await import('tesseract.js')
-      const worker = await createWorker('eng', 1, {
-        logger: (m) => {
-          if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100))
-        },
+      const image = await toBase64(file)
+      const mediaType = file.type || 'image/jpeg'
+
+      const { data, error } = await supabase.functions.invoke('extract-shifts', {
+        body: { image, mediaType },
       })
-      // PSM 11: sparse text — treats the image as scattered text, not a document
-      await worker.setParameters({ tessedit_pageseg_mode: '11' })
-      const canvas = await preprocessForOCR(file)
-      const { data: { text } } = await worker.recognize(canvas)
-      await worker.terminate()
-      console.log('[OCR raw]', text)
 
-      const shifts = parseScheduleText(text)
+      if (error) throw error
+      setProgress(100)
 
-      if (shifts.length === 0) {
+      const raw = typeof data === 'string' ? JSON.parse(data) : data
+      const shifts = Array.isArray(raw) ? raw : []
+
+      const detected = shifts.map((s) => ({
+        employer: detectEmployer(s.location ?? s.role ?? ''),
+        date: s.date,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        notes: s.role ?? '',
+      }))
+
+      if (detected.length === 0) {
         setStage('idle')
-        alert("Couldn't find shifts in that screenshot. Try a clearer crop showing dates and times together.")
+        alert("Couldn't find shifts in that screenshot.")
         return
       }
 
-      const withIds = shifts.map((s, i) => ({ ...s, _id: String(i) }))
+      const withIds = detected.map((s, i) => ({ ...s, _id: String(i) }))
       setParsed(withIds)
       setSelected(Object.fromEntries(withIds.map((s) => [s._id, true])))
       setStage('review')
     } catch (err) {
       console.error(err)
       setStage('idle')
-      alert('OCR failed — try again with a clearer image.')
+      alert('Could not read screenshot — try again.')
     }
+  }
+
+  function detectEmployer(text) {
+    const t = text.toLowerCase()
+    if (t.includes('publix')) return 'publix'
+    if (t.includes('vanderbilt') || t.includes('vumc')) return 'vanderbilt'
+    if (t.includes('nashville') || t.includes('ngh')) return 'nashville_general'
+    return 'other'
   }
 
   const updateParsed = (id, key, value) =>
