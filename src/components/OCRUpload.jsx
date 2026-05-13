@@ -35,8 +35,12 @@ export default function OCRUpload({ onBack }) {
         body: { image, mediaType },
       })
 
-      console.log('[extract-shifts]', { data, error })
-      if (error) throw error
+      if (error) {
+        const body = await error.context?.json().catch(() => null)
+        console.log('[extract-shifts error]', body)
+        throw error
+      }
+      console.log('[extract-shifts]', data)
       setProgress(100)
 
       const raw = typeof data === 'string' ? JSON.parse(data) : data

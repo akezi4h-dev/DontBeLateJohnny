@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-3-5-haiku-20241022',
         max_tokens: 1024,
         messages: [
           {
@@ -40,7 +40,17 @@ Deno.serve(async (req) => {
     })
 
     const data = await response.json()
+
+    if (!response.ok || data.type === 'error') {
+      console.error('Claude API error:', JSON.stringify(data))
+      return new Response(JSON.stringify({ error: data.error ?? data }), {
+        status: 502,
+        headers: { ...CORS, 'content-type': 'application/json' },
+      })
+    }
+
     const content = data.content?.[0]?.text ?? '[]'
+    console.log('Claude response:', content)
 
     return new Response(content, {
       headers: { ...CORS, 'content-type': 'application/json' },
