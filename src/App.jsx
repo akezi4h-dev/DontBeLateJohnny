@@ -45,7 +45,13 @@ function MainApp() {
         <div className={`md:w-1/2 md:overflow-y-auto md:border-r md:border-white/10 ${
           selectedDate ? 'hidden md:flex md:flex-col' : 'flex flex-col min-h-screen pb-20'
         }`}>
-          <MonthView onDaySelect={setSelectedDate} selectedDate={selectedDate} onSignOut={signOut} />
+          <MonthView
+            onDaySelect={setSelectedDate}
+            selectedDate={selectedDate}
+            onAdd={() => setScreen('add')}
+            onUpload={() => setScreen('upload')}
+            onSignOut={signOut}
+          />
         </div>
 
         {/* Shift card / placeholder */}
