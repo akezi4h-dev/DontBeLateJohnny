@@ -46,11 +46,12 @@ export default function OCRUpload({ onBack }) {
       const raw = typeof data === 'string' ? JSON.parse(data) : data
       const shifts = Array.isArray(raw) ? raw : []
 
+      const currentYear = new Date().getFullYear()
       const detected = shifts
         .filter((s) => s.startTime && s.endTime)
         .map((s) => ({
           employer: detectEmployer(s.location ?? s.role ?? ''),
-          date: s.date,
+          date: s.date?.replace(/^\d{4}/, String(currentYear)) ?? s.date,
           startTime: s.startTime,
           endTime: s.endTime,
           notes: s.role ?? '',

@@ -48,7 +48,7 @@ export default function ShiftCard({ date, onBack }) {
   const [newTask, setNewTask] = useState('')
 
   const shift = shifts[activeIdx] ?? null
-  const { tasks, addTask, toggleTask, removeTask } = useTasks(shift?.id ?? `empty_${date}`)
+  const { tasks, addTask, toggleTask, removeTask } = useTasks(shift?.id ?? null)
 
   const facility = shift ? (FACILITY_INFO[shift.employer] ?? FACILITY_INFO.other) : null
   const color = shift ? EMPLOYER_COLORS[shift.employer] : '#6B7280'
