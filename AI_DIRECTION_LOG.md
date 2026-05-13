@@ -213,3 +213,29 @@ A full deployment and debugging sequence spanning multiple hours and every layer
 Every fix was necessary and each one revealed the next real problem. The sequence wasn't wasted — it produced a hardened Edge Function with proper error surfacing, secret validation awareness, markdown stripping, and null-safe shift filtering.
 
 ---
+
+## Entry 16 — Post-Import Crash and Wrong Year
+
+**Asked:**
+After the first successful OCR import, the app crashed to a white page and the shift landed on May 28 2024 instead of 2026.
+
+**Produced:**
+Two separate bugs found and fixed simultaneously. (1) `ShiftCard` was passing `empty_${date}` to `useTasks` when a day had no shifts — that string is not a valid UUID, so Supabase returned 400 which crashed React. Fixed by passing `null` instead, which the existing `if (!shiftId)` guard already handled correctly. (2) Claude inferred the year from screenshot context and returned 2024. Fixed by replacing the year in Claude-returned dates with `new Date().getFullYear()` before saving.
+
+**Decided:**
+Both fixes accepted. The `empty_${date}` pattern was a latent bug that existed before OCR was added — it just never surfaced because no one had clicked an empty day in production before. The year correction is a permanent necessity: Claude will always infer the wrong year from a screenshot that has no explicit year visible.
+
+---
+
+## Entry 17 — am/pm Instead of a/p
+
+**Asked:**
+"Can you make this am and pm" — screenshot showed "9:30a → 6p" on the shift card.
+
+**Produced:**
+One-line change in `formatTime` in `dateHelpers.js`: changed the period suffix from `'a'`/`'p'` to `'am'`/`'pm'`.
+
+**Decided:**
+Accepted. "9:30am → 6pm" reads naturally. "9:30a → 6p" was a shorthand that made sense in code but looked unfinished in the UI.
+
+---
