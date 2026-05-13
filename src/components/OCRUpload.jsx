@@ -32,7 +32,7 @@ export default function OCRUpload({ onBack }) {
       const mediaType = file.type || 'image/jpeg'
 
       const { data, error } = await supabase.functions.invoke('extract-shifts', {
-        body: { image, mediaType },
+        body: { image, mediaType, year: new Date().getFullYear() },
       })
 
       if (error) {

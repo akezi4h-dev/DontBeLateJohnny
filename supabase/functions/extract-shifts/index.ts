@@ -9,7 +9,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { image, mediaType } = await req.json()
+    const { image, mediaType, year } = await req.json()
+    const currentYear = year ?? new Date().getFullYear()
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -31,7 +32,7 @@ Deno.serve(async (req) => {
               },
               {
                 type: 'text',
-                text: 'Extract all work shifts from this image. Return ONLY a JSON array with no other text, markdown, or backticks. Format: [{ "date": "2024-01-15", "startTime": "09:00", "endTime": "17:00", "role": "Cashier", "location": "Store A" }]',
+                text: `Extract all work shifts from this schedule screenshot. The current year is ${currentYear} — use this for all dates regardless of what year the image shows. Only include entries that have actual start and end times (skip "Time Off", "Off", "Holiday", and all-day entries with no times). Return ONLY a JSON array with no other text, markdown, or backticks. Format: [{ "date": "${currentYear}-01-15", "startTime": "09:00", "endTime": "17:00", "role": "Day Shift", "location": "Store A" }]`,
               },
             ],
           },
