@@ -123,19 +123,19 @@ A **screenshot-to-schedule calendar app** that uses character recognition to pul
  
 ### Core Features
  
-**📸 OCR Screenshot Ingestion**  
+**OCR Screenshot Ingestion**  
 Upload or capture a schedule screenshot and the app automatically reads the information and creates calendar events without needing manual re-entry.
  
-** Employer Tagging**  
+**Employer Tagging**  
 Every event gets tagged by employer (Vanderbilt, Nashville General, Publix) using visual color indicators so Johnny can scan an entire month view and immediately understand where he’s going.
  
-** Day-Level Task Lists**  
+**Day-Level Task Lists**  
 Tap on a day, add tasks, and check them off throughout the day  directly connected to the shift instead of floating in a separate notes app or text thread.
  
-** Drag-and-Reschedule with Version History**  
+**Drag-and-Reschedule with Version History**  
 When shifts change last minute, updates are fast and reversible without needing new screenshots or sticker edits.
  
-** Commute-Aware Alerts**  
+**Commute-Aware Alerts**  
 A real-time "leave now" notification based on current location, destination facility, and live traffic conditions so commute calculations stop living in his head.
  
 ---
@@ -157,10 +157,10 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
  
 ## Section 7 : What This Project Is Not
  
-- ✕ **Not an offline-first machine** — Internet access is required for real-time traffic, commute alerts, and schedule syncing. Offline support is currently outside scope.
-- ✕ **Not a replacement for employer systems** — Cannot remove login requirements, two-factor authentication, or hospital restrictions imposed by Vanderbilt, Nashville General, or Publix. The tool works *around* existing systems, not *through* them.
-- ✕ **Not a generic productivity app** — This is designed specifically around Johnny’s multi-employer, multi-commute lifestyle. Not productivity for everyone — support for one documented workflow.
-- ✕ **Not speculative** — Every feature connects directly back to something Johnny said or something observed in real behavior. If there’s no evidence for it, it doesn’t belong here.
+- **Not an offline-first machine** — Internet access is required for real-time traffic, commute alerts, and schedule syncing. Offline support is currently outside scope.
+- **Not a replacement for employer systems** — Cannot remove login requirements, two-factor authentication, or hospital restrictions imposed by Vanderbilt, Nashville General, or Publix. The tool works *around* existing systems, not *through* them.
+- **Not a generic productivity app** — This is designed specifically around Johnny’s multi-employer, multi-commute lifestyle. Not productivity for everyone — support for one documented workflow.
+- **Not speculative** — Every feature connects directly back to something Johnny said or something observed in real behavior. If there’s no evidence for it, it doesn’t belong here.
 ---
  
 ## 💬 All Direct Quotes
