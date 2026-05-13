@@ -79,7 +79,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
           date:      s.date?.replace(/^\d{4}/, String(currentYear)) ?? s.date,
           startTime: s.startTime,
           endTime:   s.endTime,
-          notes:     s.role ?? '',
+          notes:     '',
         }))
 
       if (detected.length === 0) {
@@ -280,9 +280,6 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
                             {formatTime(shift.startTime)}&thinsp;→&thinsp;{formatTime(shift.endTime)}
                           </div>
                           <div className="text-white/45 text-sm mt-1">{shift.date}</div>
-                          {shift.notes && (
-                            <div className="text-white/30 text-xs mt-0.5">{shift.notes}</div>
-                          )}
                         </div>
                         <button
                           onClick={() => setSelected((p) => ({ ...p, [shift._id]: !p[shift._id] }))}
