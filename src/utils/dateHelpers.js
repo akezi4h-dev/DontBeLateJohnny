@@ -22,10 +22,10 @@ export function isToday(year, month, day) {
   return t.getFullYear() === year && t.getMonth() === month && t.getDate() === day
 }
 
-// "07:00" → "7a", "19:30" → "7:30p"
+// "07:00" → "7am", "19:30" → "7:30pm"
 export function formatTime(timeStr) {
   const [h, m] = timeStr.split(':').map(Number)
-  const period = h >= 12 ? 'p' : 'a'
+  const period = h >= 12 ? 'pm' : 'am'
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
   return m === 0 ? `${h12}${period}` : `${h12}:${String(m).padStart(2, '0')}${period}`
 }
