@@ -1,5 +1,4 @@
- 🚑 The Ambulance Sticker Problem
-### A UX Research Thesis — Six Roles, Three Hospitals, One Very Messy System
+###  🚑 The Ambulance Sticker Problem: Six Roles, Three Hospitals, One Very Messy System
  
 > *"The schedule tells him where to be. This tool tells him whether he can also be everything else."*
  
