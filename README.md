@@ -165,7 +165,9 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
 - **Not a generic productivity app** — This is designed specifically around Johnny’s multi-employer, multi-commute lifestyle. Not productivity for everyone — support for one documented workflow.
 - **Not speculative** — Every feature connects directly back to something Johnny said or something observed in real behavior. If there’s no evidence for it, it doesn’t belong here.
 ---
- 
+
+# Research Documentation
+
 ## 💬 All Direct Quotes
  
 | Quote | Context |
@@ -181,5 +183,23 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
 | *"My problems revolve around commute times and making sure I got the necessary time/bandwidth to take care of the things I need to do."* | The real underlying problem |
  
 ---
+
+# Platform Rationale
+ 
+**React + Vite + Tailwind PWA  deployed on Github Pages installable to iPhone home screen by PWA, Progressive Web App.**
+ 
+Every choice traces back to Johnny:
+ 
+| Decision | Why |
+|---|---|
+| **PWA not native iOS** | Outside build constraints. PWA installs to home screen, works fullscreen, sends lock screen notifications via OneSignal on iOS 16.4+ |
+| **Responsive, not mobile-only** | He uses his laptop at work to set up his week. He uses his iPhone while walking between locations. Two modes, one app. |
+| **React + Vite** | Component structure maps directly to the UI: month view, shift cards, task lists — each discrete, stateful |
+| **Tailwind** | He said *"fun, customizable, colorful."* Tailwind makes rapid visual iteration fast |
+| **Vercel** | One-click deploy from GitHub. Johnny gets a URL, opens in Safari, adds to home screen in under a minute |
+| **OneSignal** | Commute alerts need to hit a locked screen. OneSignal handles server-side scheduling without a backend |
+ 
+> *Johnny manages his schedule on his laptop at work and checks it on his iPhone while walking  the app needs to be fully functional on both, with a setup mode on desktop and a glance mode on mobile.*
+
  
 *Primary Research conducted April 2026 · UX Research Thesis*
