@@ -1,0 +1,25 @@
+{
+  "name": "Shift Stack",
+  "short_name": "Shifts",
+  "description": "All your shifts, one screen.",
+  "start_url": "/DontBeLateJohnny/",
+  "scope": "/DontBeLateJohnny/",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
