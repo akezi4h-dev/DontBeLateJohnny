@@ -127,29 +127,6 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
         })}
       </nav>
 
-      {/* Legend */}
-      <div style={{ borderTop: '1px solid #2a2a2a' }}>
-        <div className="px-5 py-4 space-y-2">
-          <div
-            className="text-[9px] uppercase tracking-[0.15em] mb-2"
-            style={{ color: '#444444', fontFamily: "'Space Grotesk', sans-serif" }}
-          >
-            Employers
-          </div>
-          {builtins.map((cat) => (
-            <div key={cat.key} className="flex items-center gap-2">
-              <span className="text-sm leading-none">{cat.emoji}</span>
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: cat.color }}
-              />
-              <span className="text-xs" style={{ color: '#666666' }}>
-                {cat.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </aside>
   )
 }

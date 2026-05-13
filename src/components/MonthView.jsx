@@ -160,21 +160,6 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
         })}
       </div>
 
-      {/* Legend — only shows categories used this month */}
-      {legendCategories.length > 0 && (
-        <div className="flex gap-4 px-4 pb-4 pt-3 border-t border-white/5 flex-wrap">
-          {legendCategories.map((cat) => (
-            <div key={cat.key} className="flex items-center gap-1.5">
-              <span className="text-sm leading-none">{cat.emoji}</span>
-              <span
-                className="w-2 h-2 rounded-full flex-shrink-0"
-                style={{ backgroundColor: cat.color }}
-              />
-              <span className="text-xs text-white/40">{cat.name}</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
