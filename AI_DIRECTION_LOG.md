@@ -227,6 +227,19 @@ Both fixes accepted. The `empty_${date}` pattern was a latent bug that existed b
 
 ---
 
+## Entry 18 — Three Screenshot Formats; Employer Selection Step
+
+**Asked:**
+Shared three types of schedule screenshots Johnny uses: Science Provider web calendar (light, blue tiles), Vanderbilt/Nashville General scheduling system (light, dashed borders, shows "2036" as the year in tiles), and iOS Calendar (dark mode). Requested the OCR flow be updated to handle all three, with a mandatory employer selection step before upload, the last selection remembered, and an improved Edge Function prompt that explicitly skips Off/RDO/Holiday entries.
+
+**Produced:**
+Full rewrite of `OCRUpload.jsx` with a new `employer` stage as the first screen. Shows all four employer options as color-coded buttons using the existing employer color system. Stores the last selection in `localStorage` and pre-fills it on the next visit. Upload area and progress bar tinted to the selected employer's color. Company name passed to Edge Function alongside the image. Employer used directly from selection — not guessed from image content. Employer badge added to each review card as a colored pill. Role shown as subtitle under the time. Empty result shows "No work shifts found — only days off detected in this screenshot." instead of generic failure. Edge Function prompt rewritten to name the company, state the current year explicitly, and list specific entry types to skip (Off, RDO, Holiday, all-day entries with no hours).
+
+**Decided:**
+Accepted. The employer selection step solves two problems at once: it replaces unreliable in-image employer detection and it forces intentionality before upload. The remembered selection removes friction for repeat uploads from the same workplace. The improved prompt addresses all three screenshot format failure modes identified from the real screenshots.
+
+---
+
 ## Entry 17 — am/pm Instead of a/p
 
 **Asked:**
