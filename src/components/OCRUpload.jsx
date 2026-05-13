@@ -35,6 +35,7 @@ export default function OCRUpload({ onBack }) {
         body: { image, mediaType },
       })
 
+      console.log('[extract-shifts]', { data, error })
       if (error) throw error
       setProgress(100)
 
