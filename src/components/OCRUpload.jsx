@@ -14,6 +14,33 @@ export default function OCRUpload({ onBack }) {
   const [selected, setSelected] = useState({})
   const [saving, setSaving] = useState(false)
 
+  const preprocessForOCR = (file) =>
+    new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        // Scale up 2x so small phone text is easier to read
+        canvas.width = img.width * 2
+        canvas.height = img.height * 2
+        const ctx = canvas.getContext('2d')
+        ctx.imageSmoothingEnabled = false
+        ctx.scale(2, 2)
+        ctx.drawImage(img, 0, 0)
+        // Invert colors — Tesseract needs dark text on light background
+        const d = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        for (let i = 0; i < d.data.length; i += 4) {
+          d.data[i] = 255 - d.data[i]
+          d.data[i + 1] = 255 - d.data[i + 1]
+          d.data[i + 2] = 255 - d.data[i + 2]
+        }
+        ctx.putImageData(d, 0, 0)
+        URL.revokeObjectURL(url)
+        resolve(canvas)
+      }
+      img.src = url
+    })
+
   const handleFile = async (file) => {
     if (!file) return
     setStage('processing')
@@ -26,7 +53,8 @@ export default function OCRUpload({ onBack }) {
           if (m.status === 'recognizing text') setProgress(Math.round(m.progress * 100))
         },
       })
-      const { data: { text } } = await worker.recognize(file)
+      const canvas = await preprocessForOCR(file)
+      const { data: { text } } = await worker.recognize(canvas)
       await worker.terminate()
       console.log('[OCR raw]', text)
 
