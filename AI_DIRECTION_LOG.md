@@ -148,3 +148,18 @@ Fixed by adding two behaviors to `parseScheduleText`: (1) when a line matches a 
 Accepted the fix. The real source of the failure was that the parser was written for Science Provider and Teams screenshot formats, not the native iOS Calendar app. Johnny is evidently exporting directly from iOS Calendar, not a scheduling system. The fix handles both formats without breaking the original logic.
 
 ---
+
+## Entry 12 — Console Noise Cleanup (Icon 404, OneSignal, Deprecated Meta)
+
+**Asked:**
+Shared browser console output showing three non-OCR errors: `icons/icon.svg` 404, "AppID doesn't match existing apps" from OneSignal, and a deprecation warning on `apple-mobile-web-app-capable`.
+
+**Produced:**
+Identified all three causes: (1) the `public/icons/` directory was created but never populated — the favicon and manifest both referenced SVG files that didn't exist; (2) the OneSignal CDN script was scaffolded in `index.html` at project setup but never initialized with an AppID, causing the SDK to throw on every page load; (3) `mobile-web-app-capable` is the current standard, with `apple-mobile-web-app-capable` kept alongside for iOS Safari compatibility.
+
+Fixed by creating `public/icons/icon.svg` (horizontal bars in the three employer colors on a dark background), copying it to `icon-192.svg` and `icon-512.svg` for the manifest, removing the OneSignal script tag entirely, adding `mobile-web-app-capable`, and pointing the apple-touch-icon at the SVG instead of a missing PNG.
+
+**Decided:**
+Accepted all fixes. OneSignal was removed rather than stubbed — it was never configured and has no AppID, so keeping it only produces noise and loads an unnecessary CDN script on every page view.
+
+---
