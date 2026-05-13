@@ -1,0 +1,135 @@
+# AI Direction Log
+### Shift Stack — AI 201 Project 3
+*Each entry documents what was asked of AI, what AI produced, and the editorial decision made.*
+
+---
+
+## Entry 01 — Establishing Ground Rules Before Any Build
+
+**Asked:**
+Before sharing the PRD, established a constraint: "do not build out anything until I give you documentation on the assignment and the class. We start with questions."
+
+**Produced:**
+AI asked five clarifying questions: what the assignment required, what "creative coding" meant in this class, whether AI integration was technical or conceptual, what tech constraints existed, and the deadline/scope.
+
+**Decided:**
+This set the correct working relationship from the start. AI was positioned as an executor responding to research, not an inventor generating features. The questions it asked back confirmed it understood the frame. The constraint was necessary because AI defaults to building immediately on vague prompts — holding it back until the PRD was ready prevented speculative scaffolding that would have needed to be torn down.
+
+---
+
+## Entry 02 — PRD Drop and Scope Triage
+
+**Asked:**
+Dropped the full Shift Stack PRD — a 10-section product requirements document grounded in direct research with Johnny Truong, including quotes, behavior observations, employer color decisions, data models, and milestone dates.
+
+**Produced:**
+AI parsed the full document and identified three blockers before starting: GitHub username (for Pages deployment), which branch to work on, and how complete the prototype needed to be for the May 13 first contact session.
+
+**Decided:**
+Answered directly: repo is `DontBeLateJohnny`, work on `main`, and prioritize Month View + Shift Card only for tomorrow's session. This was an active scope call — the PRD specifies four screens plus PWA plus OneSignal, but a first contact session only needs the two screens Johnny would interact with first. Building the full PRD on a deadline would have produced an untested product. Constraining to two screens produced something testable.
+
+---
+
+## Entry 03 — Technology Stack Confirmation
+
+**Asked:**
+Confirmed the stack specified in the PRD: React + Vite + Tailwind CSS + PWA manifest + service worker + OneSignal + GitHub Actions deployment.
+
+**Produced:**
+AI scaffolded the full project structure: `package.json`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js`, `index.html`, `src/` tree, `public/manifest.json`, `public/sw.js`, SVG icons, and GitHub Actions deploy workflow. Build succeeded on first attempt.
+
+**Decided:**
+Accepted the scaffold as-is. The base path `/DontBeLateJohnny/` was correctly derived from the repo name. The font pairing (Syne for display, Space Grotesk for body) and employer color hex values (#00A651 Publix green, #CFB87C Vanderbilt gold, #2D6DB5 Nashville General blue) were pulled directly from the PRD without drift. No invented features were added.
+
+---
+
+## Entry 04 — Seed Data Decision
+
+**Asked:**
+Did not explicitly ask for seed data. Directed AI to build Month View and Shift Card.
+
+**Produced:**
+AI included 12 pre-populated shifts across May 2026 in `useShifts.jsx` with a note: "Seed data so the app looks real for first contact on May 13."
+
+**Decided:**
+Kept the seed data. The decision was correct for the testing context — putting an empty calendar in front of Johnny for first contact would have made it harder to evaluate the visual system (color dots, shift card layout, time display). The seed data included all three employers across multiple days, which let Johnny see the full color differentiation in one glance. This was AI anticipating a user testing need correctly without being asked.
+
+---
+
+## Entry 05 — GitHub Pages Configuration Diagnosis
+
+**Asked:**
+Reported the site wasn't working after GitHub Actions ran green.
+
+**Produced:**
+AI ran a curl check, confirmed 404, fetched the gh-pages branch to verify the build landed correctly, then identified the problem: Pages was not configured to serve from the `gh-pages` branch. Directed to Settings → Pages and provided the exact URL `github.com/akezi4h-dev/DontBeLateJohnny/settings/pages`.
+
+**Decided:**
+Followed the diagnosis. The key editorial judgment was not assuming the code was broken — AI correctly distinguished between a deployment problem (Pages source config) and a build problem (bad code). That distinction saved time that would have been spent debugging correct code.
+
+---
+
+## Entry 06 — Supabase Addition (Beyond Original PRD)
+
+**Asked:**
+"I want to add Supabase" — expanding scope beyond the original PRD, which specified localStorage only.
+
+**Produced:**
+AI asked two scoping questions before touching any code: what Supabase was for (sync vs auth vs both) and what OCR service to use.
+
+**Decided:**
+This was the right gate. The scope change was significant — it touched every data layer in the app. AI not immediately building prevented it from making assumptions about auth flow, data model, or OCR service. The answers given (sync + OCR, login screen, Apple Vision) shaped the entire implementation. Forcing the questions produced a better-scoped build.
+
+---
+
+## Entry 07 — Apple Vision Framework Redirect
+
+**Asked:**
+Specified Apple Vision Framework as the OCR technology.
+
+**Produced:**
+AI flagged a technical constraint: Apple Vision Framework is native iOS only and inaccessible from a PWA or web browser. Offered three alternatives with a comparison table: Claude vision API (best accuracy, costs ~$0.01/image), Google Vision API (very good, ~$0.0015/image), and Tesseract.js (decent for clean text, free, runs in browser).
+
+**Decided:**
+This was a genuine technical correction, not AI preference. Apple Vision Framework cannot be called from Safari or any PWA. The redirect was necessary. The alternatives table gave enough information to make a real choice, rather than just substituting one technology without explanation.
+
+---
+
+## Entry 08 — Choosing Tesseract.js Over Paid OCR
+
+**Asked:**
+"How easy would Tesseract.js be — I am broke."
+
+**Produced:**
+AI gave an honest assessment: easy to add, but parsing is the hard part. Tesseract extracts raw text; a separate parser has to interpret which text is a date, which is a time, which is an employer. Since Johnny's screenshots come from only two known systems (Science Provider and Teams), custom parsers are feasible but brittle. Recommended stubbing the upload button for today's session and building the full parser after hearing Johnny's reaction.
+
+**Decided:**
+Rejected the stub recommendation. Directed AI to wire Tesseract fully today. This was a deliberate call — having a working (even imperfect) upload feature in front of Johnny tomorrow gives real feedback on whether he would use it, how he photographs his schedule, and whether parsed results make sense to him. A stub button proves nothing in a user session.
+
+---
+
+## Entry 09 — Session Persistence Request
+
+**Asked:**
+"Email + password, but remember when he's logged in and don't ask him to login again."
+
+**Produced:**
+AI explained that this behavior is already built in — Supabase Auth stores sessions in localStorage by default and auto-refreshes tokens. No code change needed. Noted the default expiry is 7 days of inactivity and that it can be extended in Supabase dashboard under Authentication → Settings → JWT expiry.
+
+**Decided:**
+Extended to 90 days. Johnny's use pattern (daily, across two devices) means a 7-day timeout would constantly expire during weekends off or schedule gaps. 90 days matches realistic usage without requiring a permanent session (which would be a security anti-pattern for a healthcare-adjacent app).
+
+---
+
+## Entry 10 — Desktop Navigation Gap
+
+**Asked:**
+After seeing the live app: "no bottom nav."
+
+**Produced:**
+AI identified the issue: `BottomNav` has `md:hidden` — it correctly disappears on desktop, but no desktop-equivalent navigation existed. Added upload and add icons to the MonthView top bar as `hidden md:flex` elements, sitting between the month title and the forward arrow. Mobile keeps bottom nav, desktop gets header icons.
+
+**Decided:**
+Accepted the fix. The placement is correct — it puts actions near where the user's attention already is (the month header) rather than adding a separate sidebar that would complicate the two-column layout. The icons use the same SVG language as the rest of the UI.
+
+---
