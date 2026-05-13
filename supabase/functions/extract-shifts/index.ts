@@ -9,8 +9,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { image, mediaType, year } = await req.json()
+    const { image, mediaType, year, company } = await req.json()
     const currentYear = year ?? new Date().getFullYear()
+    const companyName = company ?? 'Unknown'
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -32,7 +33,7 @@ Deno.serve(async (req) => {
               },
               {
                 type: 'text',
-                text: `Extract all work shifts from this schedule screenshot. The current year is ${currentYear} — use this for all dates regardless of what year the image shows. Only include entries that have actual start and end times (skip "Time Off", "Off", "Holiday", and all-day entries with no times). Return ONLY a JSON array with no other text, markdown, or backticks. Format: [{ "date": "${currentYear}-01-15", "startTime": "09:00", "endTime": "17:00", "role": "Day Shift", "location": "Store A" }]`,
+                text: `This is a work roster screenshot for ${companyName}. The current year is ${currentYear} — use this for all dates regardless of what year the image shows. Extract ONLY actual work shifts where the person is scheduled to work. Ignore and skip any entry that says 'Off', 'Day Off', 'All Day Off', 'RDO', or any variation meaning the person is not working. Also ignore entries that are just marked 'Holiday' with no work hours. Only include shifts that have a specific start time and end time, or a named shift type that implies actual work (like 'Morning', 'Night', 'On Call'). Return ONLY a JSON array with no other text, markdown or backticks. Format: [{ "date": "${currentYear}-05-28", "startTime": "09:30", "endTime": "18:00", "role": "Pharmacist", "location": "Pharmacy", "company": "${companyName}" }]. If no actual work shifts are found, return an empty array [].`,
               },
             ],
           },
