@@ -163,3 +163,16 @@ Fixed by creating `public/icons/icon.svg` (horizontal bars in the three employer
 Accepted all fixes. OneSignal was removed rather than stubbed — it was never configured and has no AppID, so keeping it only produces noise and loads an unnecessary CDN script on every page view.
 
 ---
+
+## Entry 13 — Tesseract Fails on Dark UI Screenshots
+
+**Asked:**
+Pasted the `[OCR raw]` console output after uploading the iOS Calendar screenshot. The extracted text was almost entirely garbage — day abbreviations and month names came through, but date numbers and the time range "9:30 AM – 6:00 PM (CDT)" were completely lost.
+
+**Produced:**
+Diagnosed the root cause: Tesseract is trained on dark text on light backgrounds. iOS Calendar uses dark mode — light text on a near-black surface (#1c1c1e). Passing the image directly inverts Tesseract's assumptions and produces noise. Fixed by adding a `preprocessForOCR()` function that draws the file to a Canvas at 2x scale (to make small phone text larger) then inverts all RGB pixel values before passing the canvas to Tesseract instead of the raw file.
+
+**Decided:**
+Accepted the fix. The image inversion is the standard workaround for OCR on dark-mode UI screenshots. The 2x scale addresses a secondary issue — phone screenshots at native resolution have small text that Tesseract struggles with even on good backgrounds.
+
+---

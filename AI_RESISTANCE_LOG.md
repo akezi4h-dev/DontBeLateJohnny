@@ -119,3 +119,19 @@ Directed AI to add stateful month tracking to the parser: (1) detect standalone 
 The fix handles both the original Science Provider / Teams format AND the iOS Calendar format without breaking anything. More importantly: the first contact session revealed a real assumption gap in the PRD. Johnny's screenshot workflow is iOS Calendar, not the scheduling portals. Building only for the portal format would have left the OCR feature permanently broken for his actual use pattern.
 
 ---
+
+## Entry 08 — Tesseract Was Handed the Wrong Kind of Image
+
+**What AI gave me:**
+The OCR upload was passing the raw screenshot file directly to Tesseract. For the first two attempts (parser format mismatch, then the debug log) AI focused entirely on the text parsing layer — assuming Tesseract was reading the image correctly and the problem was downstream. The `[OCR raw]` output proved that assumption wrong: Tesseract was returning noise, not text.
+
+**Why I rejected it:**
+Both previous fixes were solving the wrong layer. The parser can't fix garbled input. The real failure was upstream: Tesseract never read the image correctly. iOS Calendar runs in dark mode — the screenshot has light text on a near-black background. Tesseract is trained on the opposite. Passing the raw file was always going to produce garbage.
+
+**What I did instead:**
+Directed AI to preprocess the image before OCR: draw to Canvas at 2x resolution, invert all pixel values, then pass the canvas to Tesseract. This converts the dark-mode screenshot into something Tesseract can actually read.
+
+**Why it's better:**
+Image preprocessing is the correct layer to fix this, not parser tuning. No amount of regex changes would have recovered text that was never extracted. The inversion fix addresses the actual signal loss, not its downstream symptoms.
+
+---
