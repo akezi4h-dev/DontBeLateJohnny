@@ -8,8 +8,12 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
   const [year, setYear]   = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
 
-  const { getShiftsForDate } = useShifts()
-  const { categories, getCategoryByKey } = useCategories()
+  // Drag-to-reschedule state
+  const [draggingShift, setDraggingShift] = useState(null)
+  const [dragOverDate,  setDragOverDate]  = useState(null)
+
+  const { getShiftsForDate, updateShift } = useShifts()
+  const { getCategoryByKey } = useCategories()
 
   const cells = getCalendarDays(year, month)
 
@@ -28,13 +32,58 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
     setMonth(today.getMonth())
   }
 
-  // Collect category keys actually used this month for the legend
-  const usedKeys = new Set(
-    cells
-      .filter(Boolean)
-      .flatMap((day) => getShiftsForDate(toISODate(year, month, day)).map((s) => s.employer))
-  )
-  const legendCategories = categories.filter((c) => usedKeys.has(c.key))
+  // ── Drag handlers ──────────────────────────────────────────────────────────
+
+  const handleDragStart = (e, shift) => {
+    e.stopPropagation()
+    setDraggingShift(shift)
+    e.dataTransfer.effectAllowed = 'move'
+    // Minimal ghost so the cursor stays clean
+    const ghost = document.createElement('span')
+    ghost.textContent = getCategoryByKey(shift.employer).emoji
+    ghost.style.cssText = 'position:fixed;top:-99px;font-size:22px;'
+    document.body.appendChild(ghost)
+    e.dataTransfer.setDragImage(ghost, 14, 14)
+    setTimeout(() => document.body.removeChild(ghost), 0)
+  }
+
+  const handleDragOver = (e, dateStr) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragOverDate !== dateStr) setDragOverDate(dateStr)
+  }
+
+  const handleDragLeave = (e) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverDate(null)
+    }
+  }
+
+  const handleDrop = async (e, dateStr) => {
+    e.preventDefault()
+    setDragOverDate(null)
+    const shift = draggingShift
+    setDraggingShift(null)
+
+    if (!shift || dateStr === shift.date) return
+
+    try {
+      await updateShift(shift.id, {
+        employer:  shift.employer,
+        date:      dateStr,
+        startTime: shift.startTime,
+        endTime:   shift.endTime,
+        notes:     shift.notes ?? '',
+      })
+    } catch (err) {
+      console.error('Reschedule failed:', err)
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDraggingShift(null)
+    setDragOverDate(null)
+  }
 
   return (
     <div className="flex flex-col h-full select-none">
@@ -107,25 +156,45 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 px-3 flex-1" style={{ gridAutoRows: 'minmax(56px, 1fr)' }}>
+      <div
+        className="grid grid-cols-7 px-3 flex-1"
+        style={{ gridAutoRows: 'minmax(56px, 1fr)' }}
+        onDragEnd={handleDragEnd}
+      >
         {cells.map((day, i) => {
           if (!day) return <div key={`empty-${i}`} />
 
-          const dateStr   = toISODate(year, month, day)
-          const shifts    = getShiftsForDate(dateStr)
+          const dateStr    = toISODate(year, month, day)
+          const shifts     = getShiftsForDate(dateStr)
           const todayBadge = isToday(year, month, day)
-          const selected  = selectedDate === dateStr
+          const selected   = selectedDate === dateStr
+          const isDragOver = dragOverDate === dateStr
+          const isSource   = draggingShift !== null && shifts.some((s) => s.id === draggingShift.id)
 
           return (
             <button
               key={dateStr}
-              onClick={() => onDaySelect(dateStr)}
-              className={`
-                flex flex-col items-center pt-1 pb-1.5 mx-0.5 my-0.5 rounded-xl transition-all active:scale-95
-                ${selected ? 'bg-white/15 ring-1 ring-white/30' : 'hover:bg-white/5'}
-              `}
+              onClick={() => { if (!draggingShift) onDaySelect(dateStr) }}
+              onDragOver={(e) => handleDragOver(e, dateStr)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, dateStr)}
+              className="flex flex-col items-center pt-1 pb-1.5 mx-0.5 my-0.5 rounded-xl transition-all active:scale-95"
+              style={{
+                backgroundColor: isDragOver
+                  ? 'rgba(255,255,255,0.15)'
+                  : selected
+                    ? 'rgba(255,255,255,0.08)'
+                    : 'transparent',
+                boxShadow: isDragOver
+                  ? '0 0 0 2px rgba(255,255,255,0.45)'
+                  : selected
+                    ? '0 0 0 1px rgba(255,255,255,0.2)'
+                    : 'none',
+                transform: isDragOver ? 'scale(1.06)' : undefined,
+                opacity: isSource ? 0.45 : 1,
+              }}
             >
-              {/* Date number with pulse on today */}
+              {/* Date number */}
               <span
                 className={`
                   text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1 transition-colors
@@ -135,15 +204,19 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
                 {day}
               </span>
 
-              {/* Emoji shift indicators */}
+              {/* Emoji shift indicators — each individually draggable */}
               <div className="flex flex-wrap gap-px justify-center max-w-[44px]">
                 {shifts.slice(0, 3).map((shift) => {
-                  const cat = getCategoryByKey(shift.employer)
+                  const cat       = getCategoryByKey(shift.employer)
+                  const isDragged = draggingShift?.id === shift.id
                   return (
                     <span
                       key={shift.id}
-                      className="text-[11px] leading-none"
-                      title={cat.name}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, shift)}
+                      className="text-[11px] leading-none cursor-grab active:cursor-grabbing"
+                      style={{ opacity: isDragged ? 0.25 : 1, transition: 'opacity 0.15s' }}
+                      title={`Drag to reschedule — ${cat.name}`}
                     >
                       {cat.emoji}
                     </span>
