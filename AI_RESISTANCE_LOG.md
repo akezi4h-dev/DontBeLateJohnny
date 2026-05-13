@@ -151,3 +151,19 @@ Replaced Tesseract entirely with Claude Haiku vision via a Supabase Edge Functio
 The entire OCR layer went from ~150 lines of fragile, format-specific code to ~40 lines of clean API calls. More importantly, it works. The Tesseract path was producing diminishing returns — each fix required more code to handle a narrower edge case. Switching tools was the right call once it was clear the core technology was mismatched to the problem.
 
 ---
+
+## Entry 10 — AI Assumed a Clean Integration Path That Didn't Exist
+
+**What AI gave me:**
+When proposing the Claude API switch, AI presented it as straightforward: create Edge Function, add secret, update frontend, done. The framing implied this was a simple swap that would resolve the OCR problem cleanly.
+
+**Why I rejected it:**
+Not a single step went smoothly. The actual sequence involved: no terminal access forcing a manual dashboard deploy, secrets not loading until after a redeploy, silent auth failures masking as empty results, model availability varying by account tier (Claude 3.x unavailable on new accounts), Claude ignoring its own prompt instructions and wrapping JSON in markdown anyway, and a frontend crash on null times for Off/Holiday entries that Claude correctly identified but the code never accounted for.
+
+**What I did instead:**
+Pushed through every layer — forced proper error surfacing in the Edge Function so errors were visible instead of silent, tested each model until finding one that worked, added markdown stripping when the prompt alone wasn't enough, and added null filtering when the data shape didn't match the frontend assumption.
+
+**Why it's better:**
+The integration that came out the other side is genuinely hardened. The Edge Function surfaces real Claude API errors instead of returning empty arrays. The model name is confirmed working. The markdown strip handles Claude's formatting inconsistency. The null filter handles Off/Holiday days. None of this would have existed if the integration had gone smoothly the first time. The struggle produced a more robust feature than a clean path would have.
+
+---

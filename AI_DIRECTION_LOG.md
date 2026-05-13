@@ -189,3 +189,27 @@ Created a Supabase Edge Function (`extract-shifts/index.ts`) that accepts a base
 Accepted the full replacement. Tesseract required format-specific parsers, image preprocessing, and PSM tuning — and still failed on real screenshots. Claude Haiku understands the image semantically and returns structured data directly. The Edge Function keeps the API key server-side. The entire OCR layer went from ~150 lines of fragile code to ~40 lines.
 
 ---
+
+## Entry 15 — Edge Function Setup: Everything That Went Wrong
+
+**Asked:**
+Deploy the `extract-shifts` Supabase Edge Function and wire it to the frontend.
+
+**Produced:**
+A full deployment and debugging sequence spanning multiple hours and every layer of the stack. In order:
+
+1. **No terminal access** — user's computer blocks terminal. Deployed via Supabase dashboard "Via Editor" instead of CLI.
+2. **Secret not reaching the function** — `ANTHROPIC_API_KEY` was saved but Deno couldn't read it. Required redeploying the function after the secret was set. Supabase Edge Functions don't pick up new secrets until the next deploy.
+3. **Model `claude-haiku-4-5-20251001` returned empty array** — because the API key wasn't working yet at that point, the error was silently swallowed and returned `[]`. Appeared as a parser failure, was actually an auth failure.
+4. **Auth error exposed** — added error surfacing to the Edge Function. Confirmed `x-api-key header is required` — secret still not loading.
+5. **Secret renamed and re-saved** — user confirmed name was wrong. Fixed to exact string `ANTHROPIC_API_KEY`.
+6. **Model `claude-3-5-haiku-20241022` not found** — new Anthropic accounts in 2026 don't have access to Claude 3.x models. Switched to `claude-3-haiku-20240307`. Also not found.
+7. **Switched to `claude-3-5-haiku-20241022` → `claude-3-haiku-20240307` → `claude-haiku-4-5-20251001`** — only Claude 4.x Haiku available on this account tier.
+8. **Claude returned markdown-wrapped JSON** — despite explicit prompt instructions, Haiku 4.5 wrapped the response in ` ```json ``` ` fences. Added regex strip in Edge Function.
+9. **Off/Holiday days included with null times** — Claude correctly identified all 10 calendar entries including non-shift days. Frontend crashed calling `formatTime(null)`. Added `.filter(s => s.startTime && s.endTime)` before mapping.
+10. **First successful upload** — May 28 shift (09:30–18:00) parsed correctly and shown in review screen.
+
+**Decided:**
+Every fix was necessary and each one revealed the next real problem. The sequence wasn't wasted — it produced a hardened Edge Function with proper error surfacing, secret validation awareness, markdown stripping, and null-safe shift filtering.
+
+---
