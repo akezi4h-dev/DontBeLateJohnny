@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import { ShiftsProvider } from './hooks/useShifts.jsx'
+import { AuthProvider } from './hooks/useAuth.jsx'
 
 window.OneSignalDeferred = window.OneSignalDeferred || []
 window.OneSignalDeferred.push(async function (OneSignal) {
@@ -20,8 +20,8 @@ if ('serviceWorker' in navigator) {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ShiftsProvider>
+    <AuthProvider>
       <App />
-    </ShiftsProvider>
+    </AuthProvider>
   </StrictMode>,
 )

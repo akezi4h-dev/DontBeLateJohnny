@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+import { useAuth } from './useAuth'
 
 export const EMPLOYER_COLORS = {
   publix: '#00A651',
@@ -14,54 +16,84 @@ export const EMPLOYER_NAMES = {
   other: 'Other',
 }
 
-// Seed data so the app looks real for first contact on May 13
-const SEED_SHIFTS = [
-  { id: '1', employer: 'publix',            date: '2026-05-13', startTime: '07:00', endTime: '15:00', notes: '' },
-  { id: '2', employer: 'vanderbilt',        date: '2026-05-14', startTime: '19:00', endTime: '07:00', notes: '' },
-  { id: '3', employer: 'nashville_general', date: '2026-05-15', startTime: '07:00', endTime: '19:00', notes: '' },
-  { id: '4', employer: 'publix',            date: '2026-05-16', startTime: '15:00', endTime: '23:00', notes: '' },
-  { id: '5', employer: 'vanderbilt',        date: '2026-05-18', startTime: '07:00', endTime: '19:00', notes: '' },
-  { id: '6', employer: 'nashville_general', date: '2026-05-20', startTime: '19:00', endTime: '07:00', notes: '' },
-  { id: '7', employer: 'publix',            date: '2026-05-21', startTime: '07:00', endTime: '15:00', notes: '' },
-  { id: '8', employer: 'vanderbilt',        date: '2026-05-22', startTime: '07:00', endTime: '19:00', notes: '' },
-  { id: '9', employer: 'nashville_general', date: '2026-05-25', startTime: '19:00', endTime: '07:00', notes: '' },
-  { id: '10', employer: 'publix',           date: '2026-05-27', startTime: '07:00', endTime: '15:00', notes: '' },
-  { id: '11', employer: 'vanderbilt',       date: '2026-05-28', startTime: '07:00', endTime: '19:00', notes: '' },
-  { id: '12', employer: 'publix',           date: '2026-05-13', startTime: '19:00', endTime: '23:00', notes: 'Evening overlap' },
-]
+function rowToShift(row) {
+  return {
+    id: row.id,
+    employer: row.employer,
+    date: row.date,
+    startTime: row.start_time.slice(0, 5),
+    endTime: row.end_time.slice(0, 5),
+    notes: row.notes || '',
+  }
+}
 
 const ShiftsContext = createContext(null)
 
 export function ShiftsProvider({ children }) {
-  const [shifts, setShifts] = useState(() => {
-    try {
-      const stored = localStorage.getItem('shifts')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      }
-    } catch {}
-    return SEED_SHIFTS
-  })
+  const { user } = useAuth()
+  const [shifts, setShifts] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    localStorage.setItem('shifts', JSON.stringify(shifts))
-  }, [shifts])
+    if (!user) {
+      setShifts([])
+      setLoading(false)
+      return
+    }
 
-  const addShift = (data) => {
-    const shift = { ...data, id: crypto.randomUUID() }
-    setShifts((prev) => [...prev, shift])
-    return shift
+    setLoading(true)
+    supabase
+      .from('shifts')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: true })
+      .then(({ data, error }) => {
+        if (!error && data) setShifts(data.map(rowToShift))
+        setLoading(false)
+      })
+
+    const channel = supabase
+      .channel(`shifts:${user.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'shifts',
+        filter: `user_id=eq.${user.id}`,
+      }, ({ eventType, new: newRow, old: oldRow }) => {
+        if (eventType === 'INSERT') setShifts((p) => [...p, rowToShift(newRow)])
+        else if (eventType === 'DELETE') setShifts((p) => p.filter((s) => s.id !== oldRow.id))
+        else if (eventType === 'UPDATE') setShifts((p) => p.map((s) => s.id === newRow.id ? rowToShift(newRow) : s))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [user?.id])
+
+  const addShift = async (data) => {
+    const { data: row, error } = await supabase
+      .from('shifts')
+      .insert({
+        user_id: user.id,
+        employer: data.employer,
+        date: data.date,
+        start_time: data.startTime,
+        end_time: data.endTime,
+        notes: data.notes || '',
+      })
+      .select()
+      .single()
+    if (error) throw error
+    return rowToShift(row)
   }
 
-  const removeShift = (id) => {
-    setShifts((prev) => prev.filter((s) => s.id !== id))
+  const removeShift = async (id) => {
+    await supabase.from('shifts').delete().eq('id', id)
   }
 
   const getShiftsForDate = (date) => shifts.filter((s) => s.date === date)
 
   return (
-    <ShiftsContext.Provider value={{ shifts, addShift, removeShift, getShiftsForDate }}>
+    <ShiftsContext.Provider value={{ shifts, loading, addShift, removeShift, getShiftsForDate }}>
       {children}
     </ShiftsContext.Provider>
   )
