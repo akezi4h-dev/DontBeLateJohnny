@@ -28,6 +28,7 @@ export default function OCRUpload({ onBack }) {
       })
       const { data: { text } } = await worker.recognize(file)
       await worker.terminate()
+      console.log('[OCR raw]', text)
 
       const shifts = parseScheduleText(text)
 
