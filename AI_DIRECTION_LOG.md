@@ -176,3 +176,16 @@ Diagnosed the root cause: Tesseract is trained on dark text on light backgrounds
 Accepted the fix. The image inversion is the standard workaround for OCR on dark-mode UI screenshots. The 2x scale addresses a secondary issue — phone screenshots at native resolution have small text that Tesseract struggles with even on good backgrounds.
 
 ---
+
+## Entry 14 — Switch OCR from Tesseract to Claude Haiku via Edge Function
+
+**Asked:**
+After multiple failed Tesseract attempts (parser format mismatch, color inversion, binarization, PSM 11), asked whether the Claude API would be easier and what it costs. Decided to switch after confirming cost is ~$0.002/image via Claude Haiku — under $0.10/month for Johnny's usage.
+
+**Produced:**
+Created a Supabase Edge Function (`extract-shifts/index.ts`) that accepts a base64 image and media type, proxies it to `claude-haiku-4-5-20251001` with a structured prompt requesting a JSON array of shifts, and returns the raw response. Rewrote `OCRUpload.jsx` to encode the file as base64, call the Edge Function via `supabase.functions.invoke`, and map the returned `{ date, startTime, endTime, role, location }` objects to the app's shift shape. Removed all Tesseract code, preprocessing, and the custom parser.
+
+**Decided:**
+Accepted the full replacement. Tesseract required format-specific parsers, image preprocessing, and PSM tuning — and still failed on real screenshots. Claude Haiku understands the image semantically and returns structured data directly. The Edge Function keeps the API key server-side. The entire OCR layer went from ~150 lines of fragile code to ~40 lines.
+
+---

@@ -135,3 +135,19 @@ Directed AI to preprocess the image before OCR: draw to Canvas at 2x resolution,
 Image preprocessing is the correct layer to fix this, not parser tuning. No amount of regex changes would have recovered text that was never extracted. The inversion fix addresses the actual signal loss, not its downstream symptoms.
 
 ---
+
+## Entry 09 — Tesseract Was the Wrong Tool Entirely
+
+**What AI gave me:**
+After three rounds of Tesseract fixes (parser format, color inversion, binarization + PSM 11), OCR was still returning garbage on real iOS Calendar screenshots. AI kept patching the same broken foundation.
+
+**Why I rejected it:**
+Tesseract is a general-purpose document OCR engine. iOS Calendar screenshots are structured UI, not documents — they have colored tiles, variable font sizes, dark mode, and a grid layout that Tesseract's page segmentation was never designed for. Each fix added complexity without addressing the root problem: Tesseract cannot reliably read this type of image.
+
+**What I did instead:**
+Replaced Tesseract entirely with Claude Haiku vision via a Supabase Edge Function. Claude understands the screenshot semantically — it doesn't need preprocessing, format-specific parsers, or PSM tuning. It reads the image and returns structured JSON directly.
+
+**Why it's better:**
+The entire OCR layer went from ~150 lines of fragile, format-specific code to ~40 lines of clean API calls. More importantly, it works. The Tesseract path was producing diminishing returns — each fix required more code to handle a narrower edge case. Switching tools was the right call once it was clear the core technology was mismatched to the problem.
+
+---
