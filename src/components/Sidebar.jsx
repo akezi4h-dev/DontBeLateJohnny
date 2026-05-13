@@ -1,5 +1,19 @@
+import { useState } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
+
+const GREETINGS = [
+  'Hey Johnny 👋',
+  "What's up Johnny",
+  'Hello Johnny 🙂',
+  'Yo Johnny 🤙',
+  "How's it going Johnny",
+  'Welcome back Johnny',
+  "Good to see you Johnny",
+  "What's good Johnny",
+  'Sup Johnny 🫡',
+  "Ready to go Johnny?",
+]
 
 function todayISO() {
   const d = new Date()
@@ -57,6 +71,11 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
   const { categories } = useCategories()
   const builtins = categories.filter((c) => c.builtin)
 
+  // Pick a greeting once per mount (changes on page refresh)
+  const [greeting] = useState(
+    () => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
+  )
+
   return (
     <aside
       className="fixed top-0 left-0 h-full hidden md:flex flex-col z-30"
@@ -69,10 +88,10 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
       {/* App name */}
       <div className="px-5 pt-7 pb-5">
         <div
-          className="text-xl font-black tracking-tight"
+          className="text-xl font-black tracking-tight leading-snug"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
-          🚑 Shift Stack
+          {greeting}
         </div>
       </div>
 
