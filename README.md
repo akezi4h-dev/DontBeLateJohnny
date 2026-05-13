@@ -120,7 +120,7 @@ Tasks live directly on the day they belong to. If a shift changes, the schedule 
  
 ---
  
-## 🛠️ Section 5 — The Approach
+## Section 5 : The Approach
  
 A **screenshot-to-schedule calendar app** that uses character recognition to pull shift details from uploaded screenshots and automatically convert them into structured events across multiple calendars in one unified view.
  
@@ -168,7 +168,7 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
 
 # Research Documentation
 
-## 💬 All Direct Quotes
+## All Direct Quotes
  
 | Quote | Context |
 |---|---|
