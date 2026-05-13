@@ -143,8 +143,14 @@ Johnny defined this himself without prompting:
 Tasks live directly on the day they belong to. If a shift changes, the schedule updates automatically. No more photoshopping ambulance stickers at 10pm.
  
 ---
+
+# Section 5 : The Thesis
+
+**Johnny Truong doesn't have a scheduling problem. He has a translation problem  six roles, three hospital systems, and no single surface that speaks all of them at once. Every workaround he's built, the ambulance stickers, the self-texts, the photoshopped screenshots, is evidence of someone filling a gap that software left open. This project eliminates that gap by turning raw schedule screenshots into structured, unified calendar events — with commute awareness, day-level tasks, and employer context built in  so that the night before a shift, Johnny opens one screen and already knows everything he needs to know.**
+
+---
  
-# Section 5 : The Approach
+# Section 6 : The Approach
  
 A **screenshot-to-schedule calendar app** that uses character recognition to pull shift details from uploaded screenshots and automatically convert them into structured events across multiple calendars in one unified view.
  
@@ -167,7 +173,7 @@ A real-time "leave now" notification based on current location, destination faci
  
 ---
  
-# Section 6 : Position Going In
+# Section 7 : Position Going In
  
 The core position: **eliminate the manual workaround loop**  the screenshots, stickers, edits, and mental tracking  by turning raw schedule information into structured, usable calendar events automatically. The user shouldn’t have to manage the same schedule twice.
  
@@ -182,17 +188,17 @@ The core position: **eliminate the manual workaround loop**  the screenshots, st
  
 ---
  
-# Section 7 : What This Project Is Not
+# Section 8 : What This Project Is Not
  
 - **Not an offline-first machine** — Internet access is required for real-time traffic, commute alerts, and schedule syncing. Offline support is currently outside scope.
 - **Not a replacement for employer systems** — Cannot remove login requirements, two-factor authentication, or hospital restrictions imposed by Vanderbilt, Nashville General, or Publix. The tool works *around* existing systems, not *through* them.
 - **Not a generic productivity app** — This is designed specifically around Johnny’s multi-employer, multi-commute lifestyle. Not productivity for everyone — support for one documented workflow.
 - **Not speculative** — Every feature connects directly back to something Johnny said or something observed in real behavior. If there’s no evidence for it, it doesn’t belong here.
----
 
 ---
 
-# Platform Rationale
+
+# Section 9 : Platform Rationale
  
 **React + Vite + Tailwind PWA  deployed on Github Pages installable to iPhone home screen by PWA, Progressive Web App.**
  
@@ -208,6 +214,10 @@ Every choice traces back to Johnny:
 | **OneSignal** | Commute alerts need to hit a locked screen. OneSignal handles server-side scheduling without a backend |
  
 > *Johnny manages his schedule on his laptop at work and checks it on his iPhone while walking  the app needs to be fully functional on both, with a setup mode on desktop and a glance mode on mobile.*
+*Primary Research conducted April-May 2026 · UX Research Thesis*
+
+---
+
+# Section 10 : Prototype Process
 
  
-*Primary Research conducted April 2026 · UX Research Thesis*
