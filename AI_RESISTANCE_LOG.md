@@ -168,6 +168,38 @@ The integration that came out the other side is genuinely hardened. The Edge Fun
 
 ---
 
+## Entry 12 — AI Built Desktop-Only Drag
+
+**What AI gave me:**
+Drag-to-reschedule using the HTML5 Drag and Drop API. The feature worked — emoji indicators were draggable, drop targets highlighted, `updateShift` fired on drop. On desktop.
+
+**Why I rejected it:**
+The app's primary use case is mobile. Johnny checks his schedule on his iPhone while walking between hospital locations — that's the behavior the whole PRD is built around. A drag-to-reschedule feature that only works on desktop is a half-feature for this specific user. HTML5 DnD fires no events on touch screens; it's architecturally incompatible with mobile, not just untested.
+
+**What I did instead:**
+Asked directly: "Can it not be done on mobile as well?" Directed AI to find a cross-platform solution before merging.
+
+**Why it's better:**
+Pointer events work identically on mouse, touch, and stylus. The replacement implementation is actually cleaner — no HTML ghost image hacks, no dataTransfer string passing, no browser inconsistencies. The dead zone (8px movement before drag activates) also fixed a tap-to-open conflict that existed in the HTML5 version. Pushing back on the desktop-only implementation produced a better feature for all input types.
+
+---
+
+## Entry 13 — AI's useTasks Hook Had No Global Visibility
+
+**What AI gave me:**
+A `useTasks(shiftId)` hook that fetched tasks for a single shift on mount and subscribed to that shift's changes. The ShiftCard called it with the active shift's ID. This worked for the shift detail panel.
+
+**Why I rejected it:**
+Asking for the task checklist to be "based on the calendar" required the calendar grid itself to know which days had tasks. With a per-shift hook, MonthView would have needed to call the hook independently for every shift on every visible cell — that's potentially dozens of Supabase subscriptions per month view, all redundant. A hook designed for one component was being asked to serve an entire grid.
+
+**What I did instead:**
+Directed AI to refactor `useTasks` into a `TasksProvider` context that loads all of the user's tasks in a single query and subscribes to all changes through one realtime channel. Exposed `hasTasksForShift` and `allDoneForShift` as selectors that any component can call without triggering additional fetches.
+
+**Why it's better:**
+One query, one subscription, zero additional overhead per calendar cell. The global context also made the calendar indicators reactive — when Johnny checks off a task in the ShiftCard, the green ✓ updates on the calendar cell in the same render cycle. That wouldn't have been possible with independent per-shift hooks.
+
+---
+
 ## Entry 11 — AI Would Have Used a Supabase Table for Categories
 
 **What AI would have given me:**

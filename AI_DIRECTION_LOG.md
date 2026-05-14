@@ -267,6 +267,72 @@ Accepted. The localStorage-only approach (no Supabase table for categories) is c
 
 ---
 
+## Entry 20 — Drag-to-Reschedule (Desktop)
+
+**Asked:**
+"Drag-to-reschedule shifts on the calendar"
+
+**Produced:**
+HTML5 drag-and-drop on each shift emoji in MonthView. Dragging an emoji sets a `draggingShift` state, dims the source cell to 45% opacity, and highlights the drop target with a white ring and scale-up. On drop, calls `updateShift` with the new date — Supabase reflects the change instantly via the realtime subscription. Ghost image is a single emoji rendered off-screen so the browser doesn't drag the full cell.
+
+**Decided:**
+Accepted for the initial push, but the scope was immediately identified as incomplete — HTML5 DnD is not supported on touch screens. Desktop worked. Mobile did not.
+
+---
+
+## Entry 21 — Drag-to-Reschedule (Cross-Platform Pointer Events)
+
+**Asked:**
+"Can it not be done on mobile as well?"
+
+**Produced:**
+Full replacement of HTML5 DnD with pointer events (`onPointerDown`, `onPointerMove`, `onPointerUp`, `onPointerCancel`). Key mechanics: `setPointerCapture` on pointerdown routes all subsequent events to the emoji span. An 8px dead zone (`Math.hypot(dx, dy) < DRAG_THRESHOLD`) distinguishes taps from drags — below the threshold, click propagates normally and opens the day. Above it, a floating emoji clone (`position: fixed`, `pointer-events: none`, 2.2x scale, drop shadow) appears above the fingertip and tracks the pointer. `document.elementsFromPoint` finds the day cell underneath — the floating clone's `pointer-events: none` makes it invisible to hit testing. `pointercancel` handles iOS scroll interruption. A `justDraggedRef` suppresses the day button's `onClick` for 200ms after a drag completes, preventing the day panel from opening when the finger lifts.
+
+**Decided:**
+Accepted. Pointer events are the correct cross-platform input API — they fire identically on mouse, touch, and stylus. There was no hybrid path; HTML5 DnD is architecturally incompatible with touch. The dead zone was necessary to preserve tap-to-open behavior on small emoji targets.
+
+---
+
+## Entry 22 — Per-Shift Task Checklist with Calendar Indicators
+
+**Asked:**
+"Task checklist — most directly quoted, simplest to build, zero dependencies. Make this also based on the calendar."
+
+**Produced:**
+`useTasks` was already scaffolded as a per-shift Supabase hook from a prior session. Refactored into `TasksProvider` — a global React context that loads all tasks for the current user in one query on mount and subscribes to all changes via a single realtime channel (`tasks:user:{userId}`). Exposed `getTasksForShift(shiftId)`, `hasTasksForShift(shiftId)`, and `allDoneForShift(shiftId)`.
+
+ShiftCard: pulls tasks via `getTasksForShift(shift.id)`, renders a `TaskRow` list with checkbox toggle, strikethrough on complete, × delete button (hover/focus only). Add form at bottom — Enter or + button submits.
+
+MonthView: imports `hasTasksForShift` and `allDoneForShift`. Each calendar cell computes `hasTasks` and `allDone` from its shifts. Shows a `·` in white/28 when tasks exist, a green `✓` when all tasks are completed. Indicator sits below the emoji stack inside the cell.
+
+`useTasks.jsx` created as the real implementation; `useTasks.js` becomes a re-export shim (Vite resolves `.js` before `.jsx`, so bare imports still work).
+
+**Decided:**
+The global context load was necessary — a per-shift hook that fetches individually meant MonthView would need N queries for N shifts per cell render. Loading all tasks once and filtering in memory is both faster and simpler. "Based on the calendar" required the indicator layer, which required global visibility. The · vs ✓ distinction (open tasks vs all done) adds meaning without adding visual weight — Johnny can scan the month and know which days are fully prepared.
+
+---
+
+## Entry 23 — Today View
+
+**Asked:**
+"Today screen make it"
+
+**Produced:**
+`TodayView.jsx` replaces the ⚡ placeholder. Renders always-today — no date navigation.
+
+Components per shift:
+- **Hero card** — employer emoji, big Syne 800 time display (`clamp(2.4rem, 10vw, 3.4rem)`), facility name and address. Times go `rgba(255,255,255,0.3)` once the shift ends.
+- **Shift progress bar** — thin white bar inside the hero card. Calculates `(elapsed / totalDuration) * 100%`. Shows "In progress · Xh Ym left" label. Rendered only while the shift is actively running — not before, not after.
+- **Commute alert** — three urgency states, recalculated every 30 seconds via `setInterval`: calm (`Leave by 7:26am`, dark background), amber (≤ 30 min: `Leave in 18m`, amber-tinted), red (leave time passed, shift not started: `Leave now!`, red-tinted). In-progress shifts swap the car icon for ⚡.
+- **Task checklist** — same add/toggle/delete as ShiftCard. Separate `taskInputs` state keyed by `shift.id` so multiple shifts on the same day each have independent input fields.
+
+Day-off state shows 😴 with "No shifts today. Enjoy the break." Multiple shifts stack vertically in a scrollable column.
+
+**Decided:**
+Accepted. The live urgency system is what separates this from just clicking today's date on the calendar — the commute alert changes color and label in real time as the leave window closes, making the screen useful throughout the morning, not just once. The progress bar adds the during-shift state the calendar never shows. The 30-second clock interval keeps the view accurate without perceptible overhead.
+
+---
+
 ## Entry 17 — am/pm Instead of a/p
 
 **Asked:**
