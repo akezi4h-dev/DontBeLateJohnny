@@ -15,6 +15,7 @@ import BottomNav from './components/BottomNav'
 import Toast from './components/Toast'
 import Confetti from './components/Confetti'
 import TodayView from './components/TodayView'
+import CommuteView from './components/CommuteView'
 
 function todayISO() {
   const d = new Date()
@@ -81,18 +82,8 @@ function MainApp() {
         {/* TODAY */}
         {screen === 'today' && <TodayView />}
 
-        {/* COMMUTE — placeholder */}
-        {screen === 'commute' && (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center px-8 pb-24 md:pb-0">
-            <div className="text-5xl">🚗</div>
-            <div
-              className="text-2xl font-black"
-              style={{ fontFamily: "'Syne', sans-serif", color: 'rgba(255,255,255,0.2)' }}
-            >
-              Commute view coming soon
-            </div>
-          </div>
-        )}
+        {/* COMMUTE */}
+        {screen === 'commute' && <CommuteView />}
 
         {/* MONTH — existing two-panel calendar layout, untouched */}
         {screen === 'month' && (
