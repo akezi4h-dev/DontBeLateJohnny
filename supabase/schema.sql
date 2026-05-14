@@ -3,7 +3,7 @@
 create table public.shifts (
   id          uuid default gen_random_uuid() primary key,
   user_id     uuid references auth.users on delete cascade not null,
-  employer    text not null check (employer in ('publix','vanderbilt','nashville_general','other')),
+  employer    text not null,
   date        date not null,
   start_time  time not null,
   end_time    time not null,
