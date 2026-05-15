@@ -6,10 +6,47 @@ import { useTasks } from '../hooks/useTasks.jsx'
 
 const DRAG_THRESHOLD = 8 // px of movement before drag begins
 
+const GREETINGS = [
+  'Hey Johnny',
+  "What's up Johnny",
+  'Hello Johnny',
+  'Yo Johnny',
+  "How's it going Johnny",
+  'Welcome back Johnny',
+  'Good to see you Johnny',
+  "What's good Johnny",
+  'Sup Johnny',
+  'Ready to go Johnny',
+]
+
+const PHRASES = [
+  "you're doing a lot. that counts.",
+  "one shift at a time.",
+  "built for the ones who show up.",
+  "three hospitals. zero excuses.",
+  "rest is part of the job too.",
+  "another month, still standing.",
+  "johnny, you got this.",
+  "every shift is a choice to show up.",
+  "the schedule says a lot about you.",
+  "not many people do what you do.",
+  "you make it look easy.",
+  "hard weeks don't last forever.",
+  "real estate can wait. you're saving lives.",
+  "showing up is half the battle.",
+  "this is what commitment looks like.",
+]
+
+function randIdx(arr) { return Math.floor(Math.random() * arr.length) }
+
 export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, onSignOut }) {
   const today = new Date()
   const [year, setYear]   = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
+
+  const [greeting]  = useState(() => GREETINGS[randIdx(GREETINGS)])
+  const [phraseIdx, setPhraseIdx] = useState(() => randIdx(PHRASES))
+  const rotatePhrease = () => setPhraseIdx(randIdx(PHRASES))
 
   // ── Drag state ─────────────────────────────────────────────────────────────
   // Refs hold mutable drag internals without triggering re-renders
@@ -31,10 +68,12 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
   const prevMonth = () => {
     if (month === 0) { setYear((y) => y - 1); setMonth(11) }
     else setMonth((m) => m - 1)
+    rotatePhrease()
   }
   const nextMonth = () => {
     if (month === 11) { setYear((y) => y + 1); setMonth(0) }
     else setMonth((m) => m + 1)
+    rotatePhrease()
   }
   const jumpToToday = () => {
     setYear(today.getFullYear())
@@ -160,13 +199,37 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
           </svg>
         </button>
 
-        <button
-          onClick={jumpToToday}
-          className="text-xl font-bold tracking-tight hover:text-white/70 transition-colors"
-          style={{ fontFamily: "'Syne', sans-serif" }}
-        >
-          {MONTH_NAMES[month]} {year}
-        </button>
+        <div className="text-center">
+          {/* Line 1 — greeting */}
+          <div
+            className="text-xl font-black tracking-tight leading-tight"
+            style={{ fontFamily: "'Syne', sans-serif" }}
+          >
+            {greeting}
+          </div>
+          {/* Line 2 — month / year (tap to jump to today) */}
+          <button
+            onClick={jumpToToday}
+            className="text-sm font-semibold leading-snug transition-colors hover:text-white/60"
+            style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            {MONTH_NAMES[month]} {year}
+          </button>
+          {/* Line 3 — rotating phrase */}
+          <div
+            key={phraseIdx}
+            className="animate-fade-in-up"
+            style={{
+              fontSize: '10px',
+              color: 'rgba(255,255,255,0.25)',
+              fontFamily: "'Space Grotesk', sans-serif",
+              marginTop: '1px',
+              letterSpacing: '0.02em',
+            }}
+          >
+            {PHRASES[phraseIdx]}
+          </div>
+        </div>
 
         <div className="flex items-center gap-1">
           {onUpload && (
