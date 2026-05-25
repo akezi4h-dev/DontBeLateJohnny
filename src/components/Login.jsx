@@ -34,7 +34,21 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <img src="/logo.svg" alt="Shift Stack" style={{ height: 'auto', width: '100%', maxWidth: '240px' }} className="mb-3" />
+          <div className="flex items-center gap-3 mb-3">
+            {/* Icon mark */}
+            <div className="flex flex-col justify-center gap-[5px] rounded-xl bg-[#141414] flex-shrink-0"
+                 style={{ width: 40, height: 40, padding: '9px 9px' }}>
+              <div className="rounded-[3px] bg-[#00A651]" style={{ height: 7 }} />
+              <div className="rounded-[3px] bg-[#CFB87C]" style={{ height: 7, width: '71%' }} />
+              <div className="rounded-[3px] bg-[#2D6DB5]" style={{ height: 7, width: '43%' }} />
+            </div>
+            {/* Wordmark */}
+            <div className="text-[32px] font-black tracking-tight leading-none"
+                 style={{ fontFamily: "'Syne', sans-serif" }}>
+              <span className="text-white">Shift </span>
+              <span className="text-white/45">Stack</span>
+            </div>
+          </div>
           <p className="text-white/35 text-sm">All your shifts, one screen.</p>
         </div>
 
