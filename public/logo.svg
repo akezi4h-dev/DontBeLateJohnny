@@ -1,36 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" width="300" height="72">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 308 64" width="308" height="64">
   <defs>
     <style>@import url('https://fonts.googleapis.com/css2?family=Syne:wght@800&amp;display=swap');</style>
   </defs>
 
-  <!-- ── Icon mark ─────────────────────────────────── -->
-  <rect width="72" height="72" rx="16" fill="#141414"/>
+  <!-- ── Icon mark ── -->
+  <rect width="64" height="64" rx="14" fill="#141414"/>
+  <!-- Publix green — longest shift -->
+  <rect x="11" y="12" width="42" height="11" rx="4" fill="#00A651"/>
+  <!-- Vanderbilt gold — medium shift -->
+  <rect x="11" y="27" width="30" height="11" rx="4" fill="#CFB87C"/>
+  <!-- Nashville General blue — shortest shift -->
+  <rect x="11" y="42" width="18" height="11" rx="4" fill="#2D6DB5"/>
 
-  <!-- Publix green — full width, represents the longest shift -->
-  <rect x="12" y="14" width="48" height="12" rx="4" fill="#00A651"/>
-  <!-- Vanderbilt gold — medium -->
-  <rect x="12" y="31" width="34" height="12" rx="4" fill="#CFB87C"/>
-  <!-- Nashville General blue — short -->
-  <rect x="12" y="48" width="20" height="12" rx="4" fill="#2D6DB5"/>
-
-  <!-- ── Wordmark ───────────────────────────────────── -->
-  <!-- SHIFT — full white -->
+  <!-- ── Wordmark — single line ── -->
   <text
-    x="88" y="34"
+    x="80" y="41"
     font-family="Syne, sans-serif"
     font-weight="800"
-    font-size="30"
+    font-size="34"
     letter-spacing="-0.5"
-    fill="#ffffff"
-  >SHIFT</text>
-
-  <!-- STACK — faded, sits below -->
-  <text
-    x="88" y="64"
-    font-family="Syne, sans-serif"
-    font-weight="800"
-    font-size="30"
-    letter-spacing="-0.5"
-    fill="rgba(255,255,255,0.35)"
-  >STACK</text>
+  ><tspan fill="#ffffff">Shift </tspan><tspan fill="rgba(255,255,255,0.45)">Stack</tspan></text>
 </svg>
