@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
+import CatIcon from './CatIcon'
 
 const GREETINGS = [
   'Hey Johnny',
@@ -138,7 +139,7 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
           </div>
           {builtins.map((cat) => (
             <div key={cat.key} className="flex items-center gap-2">
-              <span className="text-sm leading-none">{cat.emoji}</span>
+              <CatIcon cat={cat} size={16} />
               <span
                 className="w-2 h-2 rounded-full flex-shrink-0"
                 style={{ backgroundColor: cat.color }}

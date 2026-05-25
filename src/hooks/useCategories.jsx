@@ -52,9 +52,10 @@ export function CategoriesProvider({ children }) {
     categories.find((c) => c.key === key) ?? FALLBACK_CATEGORY
 
   /** Creates a new custom category and returns it. */
-  const createCategory = ({ name, color, emoji }) => {
+  const createCategory = ({ name, color, emoji, svgIcon }) => {
     const key = `custom_${Date.now()}`
     const cat = { key, name, color, emoji, builtin: false }
+    if (svgIcon) cat.svgIcon = svgIcon
     persist([...categories, cat])
     return cat
   }

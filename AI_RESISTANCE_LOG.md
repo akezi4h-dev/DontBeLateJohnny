@@ -200,6 +200,22 @@ One query, one subscription, zero additional overhead per calendar cell. The glo
 
 ---
 
+## Entry 14 — AI Would Have Proxied the API Key Through a Server
+
+**What AI would have given me:**
+The standard secure approach for calling a third-party API from a web app is to proxy the call through a backend — a Supabase Edge Function, a serverless function, or a small Express server. The API key lives on the server and never reaches the browser. AI defaults to recommending this pattern because exposing an API key in a JavaScript bundle is a security anti-pattern in production web applications.
+
+**Why that would be wrong:**
+This app has no backend beyond Supabase Edge Functions that were already added for OCR. Adding a second Edge Function just to proxy Anthropic API calls for icon generation would add a new deployment step, new Supabase secret management, new error surface, and network latency — all to protect an API key that belongs to the same person building the app. Johnny doesn't have an API key. There is no other user. The "attacker who reads the JavaScript bundle and steals the key" threat model doesn't apply when the bundle is only ever deployed to one person's personal app on GitHub Pages.
+
+**What was done instead:**
+The Anthropic API is called directly from the browser using `fetch`. The `anthropic-dangerous-direct-browser-access: true` request header is required to make this work — Anthropic's API rejects browser-origin requests without it, which is a deliberate gate that forces the developer to acknowledge the tradeoff explicitly rather than accidentally exposing a key. The API key is stored in `.env.local` (never committed) and injected by Vite as `import.meta.env.VITE_ANTHROPIC_API_KEY`. If the key is missing, the Generate button surfaces a clear error message pointing to `.env.local`.
+
+**Why it's better:**
+A proxy would have added infrastructure complexity to protect against a threat that doesn't exist for this user. The direct browser call is honest about what the app is — a personal tool, not a multi-tenant product. Anthropic's `dangerous-direct-browser-access` header is the right mechanism: it doesn't prevent the pattern, it just requires the developer to opt in knowingly. For a single-user app with no server and no intention of becoming one, that's the correct architectural call.
+
+---
+
 ## Entry 11 — AI Would Have Used a Supabase Table for Categories
 
 **What AI would have given me:**

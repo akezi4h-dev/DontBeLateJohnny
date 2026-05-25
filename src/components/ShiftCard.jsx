@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useTasks } from '../hooks/useTasks.jsx'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
+import CatIcon from './CatIcon'
 
 function TaskRow({ task, onToggle, onRemove }) {
   const color = '#00A651'
@@ -212,7 +213,7 @@ export default function ShiftCard({ date, onBack }) {
                     : { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.5)' }
                 }
               >
-                <span>{cat.emoji}</span>
+                <CatIcon cat={cat} size={16} />
                 <span>{cat.name}</span>
               </button>
             )
@@ -232,7 +233,7 @@ export default function ShiftCard({ date, onBack }) {
             {/* Header row */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="text-2xl leading-none">{emoji}</span>
+                <CatIcon cat={category} size={28} />
                 <div className="text-xs font-bold uppercase tracking-widest" style={{ color }}>
                   {employerName}
                 </div>

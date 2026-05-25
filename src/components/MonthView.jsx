@@ -3,6 +3,7 @@ import { getCalendarDays, toISODate, isToday, DAY_LABELS, MONTH_NAMES } from '..
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { useTasks } from '../hooks/useTasks.jsx'
+import CatIcon from './CatIcon'
 
 const DRAG_THRESHOLD = 8 // px of movement before drag begins
 
@@ -184,7 +185,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
             willChange:    'left, top',
           }}
         >
-          {getCategoryByKey(draggingShift.employer).emoji}
+          <CatIcon cat={getCategoryByKey(draggingShift.employer)} size={20} />
         </div>
       )}
 
@@ -344,7 +345,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
                       }}
                       title={`Drag to reschedule — ${cat.name}`}
                     >
-                      {cat.emoji}
+                      <CatIcon cat={cat} size={11} />
                     </span>
                   )
                 })}

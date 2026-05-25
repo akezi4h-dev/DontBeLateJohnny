@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories'
 import { supabase } from '../lib/supabase'
 import { formatTime } from '../utils/dateHelpers'
 import CategoryEditor from './CategoryEditor'
+import CatIcon from './CatIcon'
 
 export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory }) {
   const { addShift } = useShifts()
@@ -124,13 +125,13 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const selectedCount = Object.values(selected).filter(Boolean).length
 
   // ── Category editor ───────────────────────────────────────────────────────
-  const handleCategoryEditorSave = ({ name, color, emoji }) => {
+  const handleCategoryEditorSave = ({ name, color, emoji, svgIcon }) => {
     if (editorMode === 'create') {
-      const newCat = createCategory({ name, color, emoji })
+      const newCat = createCategory({ name, color, emoji, svgIcon: svgIcon || undefined })
       setEmployer(newCat.key)
       onNewCategory?.()
     } else if (editorMode?.editKey) {
-      updateCategory(editorMode.editKey, { name, color, emoji })
+      updateCategory(editorMode.editKey, { name, color, emoji, svgIcon: svgIcon || null })
     }
     setEditorMode(null)
   }
@@ -195,7 +196,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                       : { backgroundColor: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }
                   }
                 >
-                  <span className="text-base leading-none">{cat.emoji}</span>
+                  <CatIcon cat={cat} size={18} />
                   <span className="truncate">{cat.name}</span>
                 </button>
               ))}
@@ -409,7 +410,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                                 className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
                                 style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                               >
-                                <span>{cat.emoji}</span>
+                                <CatIcon cat={cat} size={12} />
                                 <span>{cat.name}</span>
                               </div>
                               <div
@@ -499,7 +500,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
           title={editorMode === 'create' ? 'New Category' : `Edit ${getCategoryByKey(editorMode.editKey)?.name}`}
           initial={editorMode === 'create' ? {} : (() => {
             const cat = getCategoryByKey(editorMode.editKey)
-            return { name: cat.name, color: cat.color, emoji: cat.emoji }
+            return { name: cat.name, color: cat.color, emoji: cat.emoji, svgIcon: cat.svgIcon }
           })()}
           onSave={handleCategoryEditorSave}
           onClose={() => setEditorMode(null)}

@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories'
 import { useTasks } from '../hooks/useTasks.jsx'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
+import CatIcon from './CatIcon'
 
 function todayISO() {
   const d = new Date()
@@ -200,7 +201,7 @@ export default function TodayView() {
               >
                 {/* Employer */}
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-2xl leading-none">{cat.emoji}</span>
+                  <CatIcon cat={cat} size={28} />
                   <span
                     className="text-xs font-bold uppercase tracking-widest"
                     style={{ color: cat.color, fontFamily: "'Space Grotesk', sans-serif" }}

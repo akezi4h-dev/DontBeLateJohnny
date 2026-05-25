@@ -3,6 +3,7 @@ import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
+import CatIcon from './CatIcon'
 
 // Build ISO date strings for the next N days starting today
 function getUpcomingDates(days = 14) {
@@ -174,8 +175,7 @@ export default function CommuteView() {
                         opacity: shiftEnded ? 0.5 : 1,
                       }}
                     >
-                      {/* Employer emoji */}
-                      <span className="text-2xl leading-none flex-shrink-0">{cat.emoji}</span>
+                      <CatIcon cat={cat} size={28} style={{ flexShrink: 0 }} />
 
                       {/* Centre — times + facility */}
                       <div className="flex-1 min-w-0">
@@ -242,7 +242,7 @@ export default function CommuteView() {
                   className="flex items-center gap-3 rounded-xl px-4 py-3"
                   style={{ backgroundColor: '#1a1a1a' }}
                 >
-                  <span className="text-lg leading-none">{cat.emoji}</span>
+                  <CatIcon cat={cat} size={22} />
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-white/80 truncate">{cat.name}</div>
                     {facility.address && (

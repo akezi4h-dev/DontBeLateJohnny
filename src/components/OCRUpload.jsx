@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories'
 import { formatTime } from '../utils/dateHelpers'
 import { supabase } from '../lib/supabase'
 import CategoryEditor from './CategoryEditor'
+import CatIcon from './CatIcon'
 
 export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
   const { addShift } = useShifts()
@@ -30,8 +31,8 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
     setStage('idle')
   }
 
-  const handleNewCategorySave = ({ name, color: c, emoji }) => {
-    const newCat = createCategory({ name, color: c, emoji })
+  const handleNewCategorySave = ({ name, color: c, emoji, svgIcon }) => {
+    const newCat = createCategory({ name, color: c, emoji, svgIcon: svgIcon || undefined })
     setEmployer(newCat.key)
     localStorage.setItem('lastUploadEmployer', newCat.key)
     setShowNewCat(false)
@@ -164,7 +165,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
                         border: `2px solid ${active ? cat.color : 'rgba(255,255,255,0.08)'}`,
                       }}
                     >
-                      <span className="text-xl leading-none flex-shrink-0">{cat.emoji}</span>
+                      <CatIcon cat={cat} size={20} className="flex-shrink-0" />
                       <span className="font-semibold text-sm" style={{ color: active ? '#fff' : 'rgba(255,255,255,0.6)' }}>
                         {cat.name}
                       </span>
@@ -273,7 +274,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
                             className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
                             style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                           >
-                            <span>{cat.emoji}</span>
+                            <CatIcon cat={cat} size={12} />
                             <span>{cat.name}</span>
                           </div>
                           <div className="font-black text-2xl leading-none" style={{ fontFamily: "'Syne', sans-serif" }}>

@@ -333,6 +333,27 @@ Accepted. The live urgency system is what separates this from just clicking toda
 
 ---
 
+## Entry 24 — AI-Generated SVG Category Icons
+
+**Asked:**
+Add AI-powered icon generation to the category editor with two input methods: upload any image (a logo, a storefront photo, a screenshot) or type a text description. Both paths call the Claude API and return a minimal SVG icon sized for 32×32. Store the SVG string in localStorage alongside the category. Display it everywhere the category emoji currently appears — the AddShift grid, MonthView calendar dots, ShiftCard hero and tabs, TodayView, CommuteView, OCRUpload, and the Sidebar legend. Emoji picker stays as a fallback — if the user doesn't generate an icon, everything works exactly as before.
+
+**Produced:**
+Four new or updated files, plus updates to every component that renders a category icon.
+
+1. **`src/utils/generateCategoryIcon.js`** — Calls `claude-haiku-4-5-20251001` directly from the browser via `fetch`. Two exported functions: `generateIconFromImage(base64, mediaType)` sends the image alongside the SVG prompt; `generateIconFromDescription(description)` sends text only. Both strip markdown fences from the response in case Haiku wraps its output anyway. The `anthropic-dangerous-direct-browser-access: true` header is required for browser-side Anthropic API calls; it makes the intent explicit rather than relying on CORS accident.
+
+2. **`src/components/CatIcon.jsx`** — Reusable component that checks `cat.svgIcon` first. If present, normalizes the SVG string (strips width/height attributes, injects the requested pixel size, adds `style="display:block"`) and renders it via `dangerouslySetInnerHTML` inside a fixed-size `<span>`. If absent, renders the emoji as before. A single `size` prop controls dimensions; callers pass the same values they were already using for font-size (11 for calendar dots, 16 for sidebar, 24–28 for heroes).
+
+3. **`src/components/CategoryEditor.jsx`** — New Icon section replaces the bare emoji picker. Outer tabs: **Emoji** (original picker, unchanged) and **AI Icon**. AI Icon mode has inner method tabs: **Type description** (text input + Generate button, Enter submits) and **Upload image** (dashed border button that triggers a hidden `<input type="file">`). Loading spinner during generation. Error message in a red-tinted pill if the API call fails. Once an icon is generated: a preview panel shows it tinted in the category color alongside **Regenerate** and **Use emoji instead** buttons. The live preview card at the top updates immediately. On save, passes `svgIcon` alongside `name`, `color`, `emoji` — `null` if the user is in emoji mode, so editing a category to remove its AI icon clears it correctly.
+
+4. **Updated display sites** — `MonthView`, `ShiftCard`, `TodayView`, `AddShift`, `Sidebar`, `OCRUpload`, `CommuteView` all import `CatIcon` and replace `{cat.emoji}` spans. The `<option>` elements in the OCR reassignment dropdown remain as `{cat.emoji} {cat.name}` since `<option>` only accepts text nodes.
+
+**Decided:**
+Accepted. The `currentColor` instruction in the SVG prompt is the key design decision — it means generated icons inherit the category color in every context (preview, grid, hero) without needing color post-processing. The normalization in `CatIcon` handles whatever width/height Claude emits, so the host component always gets an icon at the exact size it requests. Storing SVG in localStorage is consistent with how categories are already stored — no new infrastructure, no schema change.
+
+---
+
 ## Entry 17 — am/pm Instead of a/p
 
 **Asked:**
