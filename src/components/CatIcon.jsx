@@ -1,5 +1,25 @@
+function stripBackground(svgStr) {
+  // Remove full-coverage background rectangles (width/height >= 28, x/y near 0)
+  let s = svgStr.replace(
+    /<rect\b[^>]*(?=.*\bwidth=["'](?:2[89]|3[0-9])(?:\.\d+)?["'])(?=.*\bheight=["'](?:2[89]|3[0-9])(?:\.\d+)?["'])[^>]*\/?>/gi,
+    ''
+  )
+  // Remove full-coverage background circles (r >= 14)
+  s = s.replace(
+    /<circle\b[^>]*\br=["'](?:1[4-9]|[2-9]\d)(?:\.\d+)?["'][^>]*\/?>/gi,
+    ''
+  )
+  // Remove full-coverage ellipses
+  s = s.replace(
+    /<ellipse\b[^>]*(?=.*\brx=["'](?:1[4-9]|[2-9]\d)(?:\.\d+)?["'])(?=.*\bry=["'](?:1[4-9]|[2-9]\d)(?:\.\d+)?["'])[^>]*\/?>/gi,
+    ''
+  )
+  return s
+}
+
 function normalizeSvg(svgStr, size) {
-  return svgStr.replace(/<svg([^>]*)>/i, (_, attrs) => {
+  const stripped = stripBackground(svgStr)
+  return stripped.replace(/<svg([^>]*)>/i, (_, attrs) => {
     const cleaned = attrs
       .replace(/\s+width="[^"]*"/g, '')
       .replace(/\s+height="[^"]*"/g, '')
@@ -7,14 +27,6 @@ function normalizeSvg(svgStr, size) {
   })
 }
 
-/**
- * Renders a category icon — inline SVG if cat.svgIcon is set, otherwise the emoji.
- * Props:
- *   cat       — category object ({ emoji, svgIcon? })
- *   size      — pixel dimensions for SVG rendering (default 20)
- *   className — forwarded to the root element
- *   style     — forwarded to the root element
- */
 export default function CatIcon({ cat, size = 20, className = '', style = {} }) {
   if (cat?.svgIcon) {
     const svg = normalizeSvg(cat.svgIcon, size)

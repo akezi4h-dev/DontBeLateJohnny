@@ -7,7 +7,7 @@ Rules:
 - Flat design, solid shapes only — no gradients, no drop shadows
 - Use fill="currentColor" for ALL fills
 - Faithfully capture the distinctive shape of the logo — if it contains a stylised letter, symbol, or icon mark, reproduce that exact shape with correct proportions
-- No background rectangle, no outer border
+- NO background rectangle, NO filled circle behind the mark, NO outer border or container shape — just the mark itself on a transparent background
 - Return ONLY the raw SVG element — no markdown, no backticks, no explanation`
 
 // For text descriptions — design a conceptual icon from scratch
