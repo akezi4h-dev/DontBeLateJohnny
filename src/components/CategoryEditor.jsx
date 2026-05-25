@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { PALETTE_PRESETS, EMOJI_OPTIONS } from '../hooks/useCategories'
 import { generateIconFromImage, generateIconFromDescription } from '../utils/generateCategoryIcon'
+import { removeBackground } from '../utils/preprocessImage'
 
 function normalizeSvg(svgStr, size) {
   return svgStr.replace(/<svg([^>]*)>/i, (_, attrs) => {
@@ -82,8 +83,9 @@ export default function CategoryEditor({ initial = {}, title = 'New Category', o
     try {
       let svg
       if (file) {
-        const base64    = await toBase64(file)
-        const mediaType = file.type || 'image/jpeg'
+        const raw             = await toBase64(file)
+        const rawMediaType    = file.type || 'image/jpeg'
+        const { base64, mediaType } = await removeBackground(raw, rawMediaType)
         svg = await generateIconFromImage(base64, mediaType)
       } else {
         svg = await generateIconFromDescription(descInput || name || 'category')
