@@ -4,6 +4,7 @@ import { useCategories } from '../hooks/useCategories'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 import CatIcon from './CatIcon'
+import CommuteMap from './CommuteMap'
 
 // Build ISO date strings for the next N days starting today
 function getUpcomingDates(days = 14) {
@@ -57,8 +58,9 @@ export default function CommuteView() {
   const { getShiftsForDate } = useShifts()
   const { getCategoryByKey }  = useCategories()
 
-  const today    = todayISO()
-  const dates    = getUpcomingDates(14)
+  const today      = todayISO()
+  const dates      = getUpcomingDates(14)
+  const todayShifts = getShiftsForDate(today)
 
   // Collect only dates that have at least one shift
   const upcomingDays = dates
@@ -88,6 +90,9 @@ export default function CommuteView() {
           Commute
         </div>
       </div>
+
+      {/* ── Map ────────────────────────────────────────────────────────────── */}
+      <CommuteMap todayShifts={todayShifts} getCategoryByKey={getCategoryByKey} />
 
       {/* ── Empty state ─────────────────────────────────────────────────────── */}
       {upcomingDays.length === 0 && (

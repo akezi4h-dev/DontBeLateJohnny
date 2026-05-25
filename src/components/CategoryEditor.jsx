@@ -51,9 +51,10 @@ function Spinner() {
  *   onClose  — called when the user cancels
  */
 export default function CategoryEditor({ initial = {}, title = 'New Category', onSave, onClose }) {
-  const [name, setName]             = useState(initial.name  ?? '')
-  const [color, setColor]           = useState(initial.color ?? PALETTE_PRESETS.Neon[0])
-  const [emoji, setEmoji]           = useState(initial.emoji ?? '💊')
+  const [name, setName]             = useState(initial.name    ?? '')
+  const [address, setAddress]       = useState(initial.address ?? '')
+  const [color, setColor]           = useState(initial.color   ?? PALETTE_PRESETS.Neon[0])
+  const [emoji, setEmoji]           = useState(initial.emoji   ?? '💊')
   const [activePalette, setActivePalette] = useState('Neon')
 
   // Icon mode: 'emoji' (default) or 'ai'
@@ -172,6 +173,22 @@ export default function CategoryEditor({ initial = {}, title = 'New Category', o
             className="w-full bg-[#1e1e1e] rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none text-sm"
             style={{ border: '1px solid rgba(255,255,255,0.08)' }}
             autoFocus
+          />
+        </div>
+
+        {/* Address input */}
+        <div>
+          <label className="text-white/35 text-[10px] uppercase tracking-widest block mb-2">
+            Work Address{' '}
+            <span className="text-white/20 normal-case tracking-normal">— optional, used for map</span>
+          </label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="e.g. 1818 Albion St, Nashville, TN"
+            className="w-full bg-[#1e1e1e] rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none text-sm"
+            style={{ border: '1px solid rgba(255,255,255,0.08)' }}
           />
         </div>
 
@@ -414,6 +431,7 @@ export default function CategoryEditor({ initial = {}, title = 'New Category', o
             color,
             emoji,
             svgIcon: (iconMode === 'ai' && svgIcon) ? svgIcon : null,
+            address: address.trim() || null,
           })}
           disabled={!canSave}
           className="w-full font-bold rounded-xl py-4 transition-all active:scale-95 disabled:opacity-30 text-black"
