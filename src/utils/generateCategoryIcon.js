@@ -1,10 +1,13 @@
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
-const SVG_PROMPT =
-  'Generate a minimal, clean SVG icon. Requirements: viewBox="0 0 32 32", simple enough to display ' +
-  'at 32×32 pixels, use 1-2 colors maximum (use currentColor for the main shapes so they inherit ' +
-  'the surrounding text color), no text, no labels, no fine details — flat app-icon style. ' +
-  'Return ONLY the raw SVG code, no markdown fences, no backticks, no explanation.'
+const SVG_PROMPT = `Create a single clean SVG icon following these rules exactly:
+- viewBox="0 0 32 32", no width/height attributes
+- Flat design, solid shapes only — no gradients, no strokes, no drop shadows, no fine detail
+- 1 to 3 shapes maximum. Think bold silhouette, like an iOS app icon simplified to its core shape
+- All fills must use fill="currentColor" so the icon inherits its display color
+- No text, no letters, no numbers
+- The shape must be immediately recognizable at 16px
+- Return ONLY the raw SVG element — no markdown, no backticks, no comments, no explanation`
 
 async function callAnthropic(messages) {
   const key = import.meta.env.VITE_ANTHROPIC_API_KEY
@@ -19,8 +22,8 @@ async function callAnthropic(messages) {
       'anthropic-dangerous-direct-browser-access': 'true',
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1024,
       messages,
     }),
   })
@@ -32,7 +35,6 @@ async function callAnthropic(messages) {
 
   const data = await resp.json()
   let svg = data.content[0].text.trim()
-  // Strip markdown fences if the model wraps in ```svg ... ```
   svg = svg.replace(/^```[^\n]*\n?/, '').replace(/\n?```$/, '').trim()
   return svg
 }
@@ -42,7 +44,7 @@ export async function generateIconFromImage(base64, mediaType) {
     role: 'user',
     content: [
       { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-      { type: 'text', text: `Look at this image and ${SVG_PROMPT}` },
+      { type: 'text', text: `Look at this image and identify the main subject or logo shape. Then:\n${SVG_PROMPT}` },
     ],
   }])
 }
@@ -50,6 +52,6 @@ export async function generateIconFromImage(base64, mediaType) {
 export async function generateIconFromDescription(description) {
   return callAnthropic([{
     role: 'user',
-    content: `For a category called "${description}", ${SVG_PROMPT}`,
+    content: `Create an icon for a work category called "${description}".\n${SVG_PROMPT}`,
   }])
 }
