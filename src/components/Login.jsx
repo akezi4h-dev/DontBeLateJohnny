@@ -33,13 +33,8 @@ export default function Login() {
       <div className="w-full max-w-sm">
 
         {/* Logo */}
-        <div className="text-center mb-10">
-          <h1
-            className="text-5xl font-black text-white mb-2 tracking-tight"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            Shift Stack
-          </h1>
+        <div className="flex flex-col items-center mb-10">
+          <img src="/logo.svg" alt="Shift Stack" className="h-10 mb-3" />
           <p className="text-white/35 text-sm">All your shifts, one screen.</p>
         </div>
 
