@@ -1,13 +1,26 @@
 const API_URL = 'https://api.anthropic.com/v1/messages'
 
-const SVG_PROMPT = `Create a single clean SVG icon following these rules exactly:
+// For uploaded logos — priority is faithfully reproducing the actual mark
+const IMAGE_PROMPT = `Reproduce the main logo mark or symbol from this image as a clean flat SVG icon.
+Rules:
 - viewBox="0 0 32 32", no width/height attributes
-- Flat design, solid shapes only — no gradients, no strokes, no drop shadows, no fine detail
-- 1 to 3 shapes maximum. Think bold silhouette, like an iOS app icon simplified to its core shape
-- All fills must use fill="currentColor" so the icon inherits its display color
-- No text, no letters, no numbers
-- The shape must be immediately recognizable at 16px
-- Return ONLY the raw SVG element — no markdown, no backticks, no comments, no explanation`
+- Flat design, solid shapes only — no gradients, no drop shadows
+- Use fill="currentColor" for ALL fills
+- Faithfully capture the distinctive shape of the logo — if it contains a stylised letter, symbol, or icon mark, reproduce that exact shape with correct proportions
+- No background rectangle, no outer border
+- Return ONLY the raw SVG element — no markdown, no backticks, no explanation`
+
+// For text descriptions — design a conceptual icon from scratch
+const DESCRIPTION_PROMPT = `Design a clean flat SVG icon for a work category.
+Rules:
+- viewBox="0 0 32 32", no width/height attributes
+- Flat design, solid shapes only — no gradients, no drop shadows
+- Use fill="currentColor" for ALL fills
+- Bold recognisable silhouette, immediately clear at 16px — think simplified app icon
+- No text elements, no letters, no numbers
+- 1–4 shapes maximum
+- No background rectangle
+- Return ONLY the raw SVG element — no markdown, no backticks, no explanation`
 
 async function callAnthropic(messages) {
   const key = import.meta.env.VITE_ANTHROPIC_API_KEY
@@ -44,7 +57,7 @@ export async function generateIconFromImage(base64, mediaType) {
     role: 'user',
     content: [
       { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-      { type: 'text', text: `Look at this image and identify the main subject or logo shape. Then:\n${SVG_PROMPT}` },
+      { type: 'text', text: IMAGE_PROMPT },
     ],
   }])
 }
@@ -52,6 +65,6 @@ export async function generateIconFromImage(base64, mediaType) {
 export async function generateIconFromDescription(description) {
   return callAnthropic([{
     role: 'user',
-    content: `Create an icon for a work category called "${description}".\n${SVG_PROMPT}`,
+    content: `Category: "${description}"\n\n${DESCRIPTION_PROMPT}`,
   }])
 }
