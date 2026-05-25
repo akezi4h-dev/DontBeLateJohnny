@@ -34,7 +34,7 @@ export default function Login() {
 
         {/* Logo */}
         <div className="flex flex-col items-center mb-10">
-          <img src="/logo.svg" alt="Shift Stack" className="h-10 mb-3" />
+          <img src="/logo.svg" alt="Shift Stack" style={{ height: 'auto', width: '100%', maxWidth: '240px' }} className="mb-3" />
           <p className="text-white/35 text-sm">All your shifts, one screen.</p>
         </div>
 
