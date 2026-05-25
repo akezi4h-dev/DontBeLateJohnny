@@ -8,7 +8,7 @@ const SVG_PROMPT =
 
 async function callAnthropic(messages) {
   const key = import.meta.env.VITE_ANTHROPIC_API_KEY
-  if (!key) throw new Error('Add VITE_ANTHROPIC_API_KEY to .env.local to enable icon generation')
+  if (!key) throw new Error('API key not configured — add VITE_ANTHROPIC_API_KEY as a GitHub Actions secret and redeploy')
 
   const resp = await fetch(API_URL, {
     method: 'POST',
