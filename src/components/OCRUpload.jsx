@@ -81,6 +81,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
           startTime: s.startTime,
           endTime:   s.endTime,
           notes:     '',
+          source:    'ocr',
         }))
 
       if (detected.length === 0) {

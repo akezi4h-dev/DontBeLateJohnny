@@ -29,7 +29,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     if (!date) return setError('Date is required')
     setSaving(true)
     try {
-      await addShift({ employer, date, startTime, endTime, notes })
+      await addShift({ employer, date, startTime, endTime, notes, source: 'manual' })
       onSuccess?.()
       onBack()
     } catch (err) {

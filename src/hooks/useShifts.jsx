@@ -18,12 +18,13 @@ export const EMPLOYER_NAMES = {
 
 function rowToShift(row) {
   return {
-    id: row.id,
-    employer: row.employer,
-    date: row.date,
+    id:        row.id,
+    employer:  row.employer,
+    date:      row.date,
     startTime: row.start_time.slice(0, 5),
-    endTime: row.end_time.slice(0, 5),
-    notes: row.notes || '',
+    endTime:   row.end_time.slice(0, 5),
+    notes:     row.notes || '',
+    source:    row.source ?? 'manual',
   }
 }
 
@@ -73,12 +74,13 @@ export function ShiftsProvider({ children }) {
     const { data: row, error } = await supabase
       .from('shifts')
       .insert({
-        user_id: user.id,
-        employer: data.employer,
-        date: data.date,
+        user_id:    user.id,
+        employer:   data.employer,
+        date:       data.date,
         start_time: data.startTime,
-        end_time: data.endTime,
-        notes: data.notes || '',
+        end_time:   data.endTime,
+        notes:      data.notes || '',
+        source:     data.source ?? 'manual',
       })
       .select()
       .single()
