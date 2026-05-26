@@ -288,10 +288,10 @@ Would this be faster than your current screenshot method?
 Use the calendar to explain what your upcoming week looks like across all jobs.
 
 **Questions**
-Was it easy to tell which shifts belonged to which employer?
-Which days felt the busiest to you?
-Did the colors help you mentally organize the week?
-Was there any information you expected but couldn’t find?
+1. Was it easy to tell which shifts belonged to which employer?
+2. Which days felt the busiest to you?
+3. Did the colors help you mentally organize the week?
+4. Was there any information you expected but couldn’t find?
 
 ### Task 3 Add and Complete a Task
 
@@ -299,10 +299,10 @@ Was there any information you expected but couldn’t find?
 Add a realistic reminder or task to one of your workdays, then mark it as completed.
 
 **Questions**
-Is attaching tasks to a specific day feel natural?
-Would you use this instead of texting yourself reminders?
-What kinds of tasks would you realistically add here?
-Did anything about the task system feel unnecessary or missing?
+1. Is attaching tasks to a specific day feel natural?
+2. Would you use this instead of texting yourself reminders?
+3. What kinds of tasks would you realistically add here?
+4. Did anything about the task system feel unnecessary or missing?
 
 ### Task 4 Handle a Schedule Change
 
@@ -310,10 +310,10 @@ Did anything about the task system feel unnecessary or missing?
 Pretend one of your hospital shifts changed last minute. Show how you would update or manage that change in the app.
 
 **Questions**
-What was the first thing you tried to do?
-Did this feel easier than editing screenshots manually?
-Would you trust the app to stay accurate after schedule changes?
-What would make you trust the system more?
+1. What was the first thing you tried to do?
+2. Did this feel easier than editing screenshots manually?
+3. Would you trust the app to stay accurate after schedule changes?
+4. What would make you trust the system more?
 
 ### Task 5 Mobile Glance Test
 
@@ -321,10 +321,10 @@ What would make you trust the system more?
 Imagine you are walking between locations and quickly checking the app on your phone.
 
 **Questions**
-What information stood out immediately on mobile?
-Did anything feel difficult to access quickly?
-Would you realistically check this while on the move?
-After using the prototype, what still feels stressful or unresolved about scheduling?
+1. What information stood out immediately on mobile?
+2. Did anything feel difficult to access quickly?
+3. Would you realistically check this while on the move?
+4. After using the prototype, what still feels stressful or unresolved about scheduling?
 
 
 
