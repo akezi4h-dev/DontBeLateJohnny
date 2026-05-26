@@ -261,7 +261,6 @@ Every choice traces back to Johnny:
 
 # Section 11 : User Testing
 
-
 ## First Click Through
 
 ### User Testing Goals
@@ -272,8 +271,62 @@ Every choice traces back to Johnny:
 4. Measure how effectively employer colors, shift cards, and task features support Johnny’s real-world workflow.
 5. Observe which features build or break trust, especially around OCR accuracy, schedule updates, and notifications.
 
-### User Testing Questions and Tasks
+### Task 1 Check Tomorrow’s Schedule
 
-#### Task 1  Check Tomorrow’s Schedule
+**Prompt**
+Open the app and figure out where you are working tomorrow, what time your shift starts, and when you would need to leave.
 
- 
+**Questions**
+What information did you notice first?
+Was anything confusing when trying to understand tomorrow’s schedule?
+Did the commute information feel helpful?
+Would this be faster than your current screenshot method?
+
+### Task 2 Check Tomorrow’s Schedule
+
+**Prompt**
+Use the calendar to explain what your upcoming week looks like across all jobs.
+
+**Questions**
+Was it easy to tell which shifts belonged to which employer?
+Which days felt the busiest to you?
+Did the colors help you mentally organize the week?
+Was there any information you expected but couldn’t find?
+
+### Task 3 Add and Complete a Task
+
+**Prompt**
+Add a realistic reminder or task to one of your workdays, then mark it as completed.
+
+**Questions**
+Is attaching tasks to a specific day feel natural?
+Would you use this instead of texting yourself reminders?
+What kinds of tasks would you realistically add here?
+Did anything about the task system feel unnecessary or missing?
+
+### Task 4 Handle a Schedule Change
+
+**Prompt**
+Pretend one of your hospital shifts changed last minute. Show how you would update or manage that change in the app.
+
+**Questions**
+What was the first thing you tried to do?
+Did this feel easier than editing screenshots manually?
+Would you trust the app to stay accurate after schedule changes?
+What would make you trust the system more?
+
+### Task 5 Mobile Glance Test
+
+**Prompt**
+Imagine you are walking between locations and quickly checking the app on your phone.
+
+**Questions**
+What information stood out immediately on mobile?
+Did anything feel difficult to access quickly?
+Would you realistically check this while on the move?
+After using the prototype, what still feels stressful or unresolved about scheduling?
+
+
+
+
+
