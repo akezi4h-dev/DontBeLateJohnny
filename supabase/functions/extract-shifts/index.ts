@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: 'claude-3-5-haiku-20241022',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
           {
             role: 'user',
@@ -33,7 +33,24 @@ Deno.serve(async (req) => {
               },
               {
                 type: 'text',
-                text: `This is a work roster screenshot for ${companyName}. The current year is ${currentYear} — use this for all dates regardless of what year the image shows. Extract ONLY actual work shifts where the person is scheduled to work. Ignore and skip any entry that says 'Off', 'Day Off', 'All Day Off', 'RDO', or any variation meaning the person is not working. Also ignore entries that are just marked 'Holiday' with no work hours. Only include shifts that have a specific start time and end time, or a named shift type that implies actual work (like 'Morning', 'Night', 'On Call'). Return ONLY a JSON array with no other text, markdown or backticks. Format: [{ "date": "${currentYear}-05-28", "startTime": "09:30", "endTime": "18:00", "role": "Pharmacist", "location": "Pharmacy", "company": "${companyName}" }]. If no actual work shifts are found, return an empty array [].`,
+                text: `This is a work schedule screenshot for ${companyName}. The year is ${currentYear} — use this year for ALL dates.
+
+INCLUDE only confirmed, scheduled work shifts.
+
+SKIP all of the following:
+- Shifts shown with dashed or dotted borders (these are pending, open, or unconfirmed — not real assignments)
+- Any entry labeled "Off", "Day Off", "Time Off", "All Day Off", "RDO", "Holiday" (with no hours), or any wording that means the person is not working
+- Dates that belong to an adjacent month shown in the calendar overflow (e.g. June dates visible in a July calendar) — only extract shifts for the primary month shown in the header
+
+PARSING RULES:
+- 4-digit numbers like "2036", "1234" etc. appearing beneath or near shift times are store or location codes — they are NOT times or years, ignore them entirely
+- Convert shorthand times: "9a"=09:00, "10a"=10:00, "11a"=11:00, "12p"=12:00, "1p"=13:00, "2p"=14:00, "3p"=15:00, "4p"=16:00, "5p"=17:00, "6p"=18:00, "7p"=19:00, "8p"=20:00, "9p"=21:00, "10p"=22:00
+- All times must be in 24-hour HH:MM format
+
+Return ONLY a raw JSON array — no markdown, no backticks, no explanation:
+[{"date":"${currentYear}-MM-DD","startTime":"HH:MM","endTime":"HH:MM","role":"","location":"","company":"${companyName}"}]
+
+If no confirmed shifts are found, return [].`,
               },
             ],
           },
