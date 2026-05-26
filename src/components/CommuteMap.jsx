@@ -49,13 +49,13 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     try { return JSON.parse(localStorage.getItem(HOME_KEY)) } catch (_) { return null }
   })
   const [livePos, setLivePos]     = useState(null)
-  const [directions, setDirections] = useState(null)
   const [geoCache, setGeoCache]   = useState(() => {
     try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY)) ?? {} } catch (_) { return {} }
   })
   const [settingHome, setSettingHome] = useState(false)
   const [mapRef, setMapRef]       = useState(null)
   const [collapsed, setCollapsed] = useState(false)
+  const [directionLegs, setDirectionLegs] = useState([]) // [{ directions, color }]
 
   // ── Live GPS ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -95,27 +95,35 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     })
   }, [isLoaded, todayShifts, getCategoryByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Build directions ────────────────────────────────────────────────────
+  // ── Build per-leg directions (one per stop, each in the category's colour) ─
   useEffect(() => {
     if (!isLoaded || !home || !window.google || !todayShifts.length) {
-      setDirections(null)
+      setDirectionLegs([])
       return
     }
+
     const stops = [...new Set(todayShifts.map((s) => s.employer))]
-      .map((key) => geoCache[key])
-      .filter(Boolean)
+      .map((key) => ({ pos: geoCache[key], cat: getCategoryByKey(key) }))
+      .filter((s) => s.pos)
+
     if (!stops.length) return
 
-    new window.google.maps.DirectionsService().route(
-      {
-        origin:      home,
-        destination: stops[stops.length - 1],
-        waypoints:   stops.slice(0, -1).map((location) => ({ location, stopover: true })),
-        travelMode:  window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => setDirections(status === 'OK' ? result : null)
-    )
-  }, [isLoaded, home, geoCache, todayShifts])
+    // Build waypoint list: home (no colour) → stop1 → stop2 → …
+    const waypoints = [{ pos: home, cat: null }, ...stops]
+    const svc = new window.google.maps.DirectionsService()
+
+    const requests = waypoints.slice(0, -1).map((from, i) => {
+      const to = waypoints[i + 1]
+      return new Promise((resolve) => {
+        svc.route(
+          { origin: from.pos, destination: to.pos, travelMode: window.google.maps.TravelMode.DRIVING },
+          (result, status) => resolve(status === 'OK' ? { directions: result, color: to.cat?.color ?? '#ffffff' } : null)
+        )
+      })
+    })
+
+    Promise.all(requests).then((legs) => setDirectionLegs(legs.filter(Boolean)))
+  }, [isLoaded, home, geoCache, todayShifts, getCategoryByKey])
 
   // ── Work markers (memoised so fitBounds effect can depend on them) ──────
   const workMarkers = useMemo(() =>
@@ -264,15 +272,20 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
             options={MAP_OPTIONS}
             onLoad={setMapRef}
           >
-            {directions && (
+            {directionLegs.map((leg, i) => (
               <DirectionsRenderer
-                directions={directions}
+                key={i}
+                directions={leg.directions}
                 options={{
                   suppressMarkers: true,
-                  polylineOptions: { strokeColor: '#ffffff', strokeOpacity: 0.45, strokeWeight: 4 },
+                  polylineOptions: {
+                    strokeColor:   leg.color,
+                    strokeOpacity: 0.8,
+                    strokeWeight:  5,
+                  },
                 }}
               />
-            )}
+            ))}
             {home && homeIcon    && <Marker position={home}   icon={homeIcon}  zIndex={10} />}
             {livePos && liveIcon && <Marker position={livePos} icon={liveIcon} zIndex={20} />}
             {workMarkers.map(({ pos, cat }) => {
