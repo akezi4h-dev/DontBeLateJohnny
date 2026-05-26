@@ -280,12 +280,15 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
 
       {/* Calendar grid */}
       <div className="grid grid-cols-7 px-3 flex-1" style={{ gridAutoRows: 'minmax(56px, 1fr)' }}>
-        {cells.map((day, i) => {
+        {(() => {
+          const todayStr = toISODate(today.getFullYear(), today.getMonth(), today.getDate())
+          return cells.map((day, i) => {
           if (!day) return <div key={`empty-${i}`} />
 
           const dateStr    = toISODate(year, month, day)
           const shifts     = getShiftsForDate(dateStr)
           const todayBadge = isToday(year, month, day)
+          const isPast     = !todayBadge && dateStr < todayStr
           const selected   = selectedDate === dateStr
           const isDragOver = dragOverDate === dateStr
           const isSource   = draggingShift !== null && shifts.some((s) => s.id === draggingShift.id)
@@ -310,7 +313,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
                     ? '0 0 0 1px rgba(255,255,255,0.2)'
                     : 'none',
                 transform: isDragOver ? 'scale(1.06)' : undefined,
-                opacity:   isSource   ? 0.35 : 1,
+                opacity:   isSource ? 0.35 : isPast ? 0.35 : 1,
                 transition: 'background-color 0.1s, box-shadow 0.1s, transform 0.1s, opacity 0.15s',
               }}
             >
@@ -318,7 +321,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
               <span
                 className={`
                   text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full mb-1
-                  ${todayBadge ? 'bg-white text-black font-bold animate-pulse-ring' : 'text-white/80'}
+                  ${todayBadge ? 'bg-white text-black font-bold animate-pulse-ring' : isPast ? 'text-white/30' : 'text-white/80'}
                 `}
               >
                 {day}
@@ -367,7 +370,7 @@ export default function MonthView({ onDaySelect, selectedDate, onAdd, onUpload, 
               )}
             </button>
           )
-        })}
+        })})}()
       </div>
 
     </div>
