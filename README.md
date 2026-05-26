@@ -225,7 +225,7 @@ Every choice traces back to Johnny:
 
 ---
 
-# Section 10 : Prototype Process
+# Section 10 : Prototype Style
 
  
 ## Visual Style
@@ -255,3 +255,25 @@ Every choice traces back to Johnny:
 | Shift times (hero element) | Syne | 800 · 42px minimum |
 | Employer names / headings | Syne | 700 |
 | Body / UI / labels | Space Grotesk | 400 · 500 |
+
+
+---
+
+# Section 11 : User Testing
+
+
+## First Click Through
+
+### User Testing Goals
+
+1. Test whether Johnny can quickly understand his full schedule in one place without relying on screenshots or multiple apps.
+2. Evaluate whether the prototype reduces stress and mental effort around commuting, shift tracking, and task management.
+3. Identify usability issues involving navigation, schedule importing, and understanding interactions across desktop and mobile.
+4. Measure how effectively employer colors, shift cards, and task features support Johnny’s real-world workflow.
+5. Observe which features build or break trust, especially around OCR accuracy, schedule updates, and notifications.
+
+### User Testing Questions and Tasks
+
+#### Task 1  Check Tomorrow’s Schedule
+
+ 
