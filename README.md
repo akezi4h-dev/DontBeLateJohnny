@@ -326,7 +326,131 @@ Imagine you are walking between locations and quickly checking the app on your p
 3. Would you realistically check this while on the move?
 4. After using the prototype, what still feels stressful or unresolved about scheduling?
 
+### User Testing Results
 
+| Quote | Context |
+|---|---|
+| *"I like that I can finally see everything in one place instead of bouncing between apps."* | Positive reaction to unified scheduling |
+| *"The colors actually help more than I thought they would."* | Reaction to employer color coding |
+| *"The commute part is actually useful because that’s what stresses me out the most."* | Positive feedback on commute-aware features |
+| *"I like that the shift times are big because that’s the main thing I care about."* | Reaction to visual hierarchy and readability |
+| *"This already feels less chaotic than my current system."* | Overall emotional reaction to prototype organization |
+| *"I kept looking for a navigation bar on desktop."* | Difficulty navigating desktop experience |
+| *"I didn’t know where to go next on laptop because there wasn’t a clear menu."* | Navigation confusion during testing |
+| *"Some of the screenshots imported correctly, but some shift times got messed up."* | OCR inconsistency across schedule screenshots |
+| *"The screenshots that had weird formatting confused the scanner a little."* | OCR struggled with different hospital layouts |
+| *"I still want a faster way to fix mistakes if the schedule imports wrong."* | User concern about OCR correction workflow |
 
+Insert images of screenshots not working table here claude
 
+User testing focused on observing Johnny using the prototype to manage shifts across Publix, Vanderbilt, and Nashville General. Several features worked immediately without explanation. Johnny responded positively to the unified calendar view, employer color coding, and large shift-time displays, saying the app felt “less chaotic” than his current screenshot system. The commute-aware information was especially useful because commute planning is one of his main stress points. He also naturally understood the task checklist system and preferred having reminders attached directly to workdays instead of texting himself notes separately.
 
+Testing also revealed important usability problems. On desktop, Johnny repeatedly searched for a navigation bar and became unsure where to go next because navigation was unclear. OCR schedule importing was inconsistent depending on screenshot formatting — some schedules imported correctly while others misread shift times or layout information. These issues reduced trust in the system and showed the need for clearer desktop navigation, stronger OCR handling for different hospital schedule layouts, and easier ways to manually correct imported schedule errors.
+
+### Key Changes Needed After First Round Testing
+
+- Add a persistent desktop navigation bar to improve orientation and usability
+- Improve navigation clarity between calendar, task, and schedule views
+- Add clearer visual indicators for clickable interactions and navigation flow
+- Improve OCR handling for inconsistent hospital screenshot layouts
+- Add better error detection when shift times import incorrectly
+- Create a faster manual correction workflow after OCR importing
+- Improve feedback states so users know schedules imported successfully
+- Increase visibility of commute and leave-time information
+- Continue optimizing the app for fast “glance-based” schedule checking
+- Reduce friction between uploading screenshots and viewing organized schedules
+
+---
+
+## Second Click Through
+
+### User Testing Goals
+
+1. Evaluate whether navigation improvements reduced confusion on desktop.
+2. Test whether OCR importing became more reliable across different screenshot layouts.
+3. Measure whether the app feels closer to replacing Johnny’s screenshot workflow.
+4. Observe which features Johnny relies on most during quick schedule checks.
+5. Identify remaining trust issues involving imported schedules and updates.
+
+### Task 1 Desktop Navigation Test
+
+**Prompt**  
+Use the desktop version of the app to check tomorrow’s shift and navigate between different sections of the app.
+
+**Questions**
+1. Was it easier to move through the app this time?
+2. Did the navigation feel clearer compared to the first version?
+3. Were there any moments where you still felt lost?
+4. What section did you naturally go to first?
+
+### Task 2 OCR Screenshot Import Test
+
+**Prompt**  
+Upload multiple schedule screenshots from different hospital systems and review the imported shifts.
+
+**Questions**
+1. Did the screenshots import more accurately this time?
+2. Were any shifts or times still incorrect?
+3. Was it easier to notice import mistakes?
+4. How would you want to fix incorrect schedule information?
+
+### Task 3 Commute & Leave Time Test
+
+**Prompt**  
+Check your next upcoming shift and explain when you would need to leave.
+
+**Questions**
+1. Did the leave feature feel useful?
+2. Was commute information easier to notice this time?
+3. Would you realistically rely on this feature daily?
+4. What other commute information would help you?
+
+### Task 4 Personalization Test
+
+**Prompt**  
+Review the employer labels and colors used throughout the app.
+
+**Questions**
+1. Did the employer colors still help organize your schedule?
+2. Would customizable employer logos or icons improve the experience?
+3. Did the schedule feel more personal to your workflow now?
+4. Was there anything visually confusing?
+
+### Task 5 Quick Mobile Check Test
+
+**Prompt**  
+Imagine you are walking between locations and checking the app quickly on your phone.
+
+**Questions**
+1. What information did you notice first?
+2. Did the app feel faster to understand this time?
+3. What feature mattered most during quick checking?
+4. Does this feel closer to replacing your current workaround system?
+
+### User Testing Results
+
+| Quote | Context |
+|---|---|
+| *"I like the leave feature."* | Positive reaction to commute-aware leave alerts |
+| *"The navigation makes more sense now."* | Improved desktop usability after adding navigation |
+| *"It feels easier to understand where I’m supposed to be."* | Reaction to unified schedule organization |
+| *"The screenshots imported better this time."* | Improvement in OCR schedule importing |
+| *"I like seeing everything together without checking three apps."* | Positive response to consolidated scheduling |
+| *"Maybe make customizable logos where you can upload and change the logos."* | Suggestion for employer personalization |
+| *"I still want a faster way to fix imported mistakes."* | Remaining frustration with OCR corrections |
+| *"Some screenshots still read differently depending on the layout."* | Continued OCR inconsistency across systems |
+| *"I mostly just care about the next shift and when I should leave."* | Observation about glance-based usage behavior |
+| *"This feels closer to something I’d actually use every day."* | Overall reflection after second round testing |
+
+The second round of testing showed clear improvement in navigation clarity and schedule readability. Johnny adapted to the updated desktop navigation more naturally and relied heavily on the leave-time feature and unified schedule overview during testing. OCR importing also improved, with more screenshots reading successfully compared to the first round of testing. The prototype felt closer to replacing his current workaround system because it reduced the need to mentally combine information from multiple apps.
+
+However, testing still revealed ongoing trust issues around OCR consistency. Certain hospital screenshot layouts continued to produce inaccurate imports, especially when formatting varied significantly. Johnny also expressed interest in more personalization features, such as customizable employer logos. Another important observation was that he primarily used the app as a fast “next shift” checking tool rather than a deep planning interface, reinforcing the importance of glanceability, speed, and accuracy over feature complexity.
+
+### Key Changes Needed After Second Round Testing
+
+- Improve OCR handling for inconsistent screenshot layouts across hospital systems
+- Add a faster manual correction flow for imported schedule mistakes
+- Add customizable employer logos and icons
+- Increase emphasis on “next shift” and leave-time visibility
+- Continue simplifying mobile glance interactions
+- Improve trust indicators for successful schedule imports and updates
