@@ -1,10 +1,34 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense, Component } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 import CatIcon from './CatIcon'
-import CommuteMap from './CommuteMap'
+
+// Lazy-load so a Maps API failure never crashes the whole app
+const CommuteMap = lazy(() => import('./CommuteMap'))
+
+const MAP_FALLBACK = (
+  <div className="mx-4 mb-4 h-56 rounded-2xl bg-[#1a1a1a] flex items-center justify-center">
+    <span className="text-white/30 text-sm">Loading map…</span>
+  </div>
+)
+
+// Class-based error boundary — catches render errors inside CommuteMap
+class MapErrorBoundary extends Component {
+  state = { crashed: false }
+  static getDerivedStateFromError() { return { crashed: true } }
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div className="mx-4 mb-4 rounded-2xl bg-[#1a1a1a] p-5 text-center">
+          <span className="text-white/30 text-sm">Map unavailable on this device</span>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 // Build ISO date strings for the next N days starting today
 function getUpcomingDates(days = 14) {
@@ -92,7 +116,11 @@ export default function CommuteView() {
       </div>
 
       {/* ── Map ────────────────────────────────────────────────────────────── */}
-      <CommuteMap todayShifts={todayShifts} getCategoryByKey={getCategoryByKey} />
+      <MapErrorBoundary>
+        <Suspense fallback={MAP_FALLBACK}>
+          <CommuteMap todayShifts={todayShifts} getCategoryByKey={getCategoryByKey} />
+        </Suspense>
+      </MapErrorBoundary>
 
       {/* ── Empty state ─────────────────────────────────────────────────────── */}
       {upcomingDays.length === 0 && (

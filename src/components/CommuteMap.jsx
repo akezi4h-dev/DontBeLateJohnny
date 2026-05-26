@@ -44,12 +44,12 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
   })
 
   const [home, setHome] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(HOME_KEY)) } catch { return null }
+    try { return JSON.parse(localStorage.getItem(HOME_KEY)) } catch (_) { return null }
   })
   const [livePos, setLivePos]     = useState(null)
   const [directions, setDirections] = useState(null)
   const [geoCache, setGeoCache]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY)) ?? {} } catch { return {} }
+    try { return JSON.parse(localStorage.getItem(GEO_CACHE_KEY)) ?? {} } catch (_) { return {} }
   })
   const [settingHome, setSettingHome] = useState(false)
   const [mapRef, setMapRef]       = useState(null)
