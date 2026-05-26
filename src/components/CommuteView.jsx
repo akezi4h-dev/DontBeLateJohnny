@@ -3,6 +3,7 @@ import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
+import { useCommuteAlerts } from '../hooks/useCommuteAlerts'
 import CatIcon from './CatIcon'
 
 // Lazy-load so a Maps API failure never crashes the whole app
@@ -82,9 +83,12 @@ export default function CommuteView() {
   const { getShiftsForDate } = useShifts()
   const { getCategoryByKey }  = useCategories()
 
-  const today      = todayISO()
-  const dates      = getUpcomingDates(14)
+  const today       = todayISO()
+  const dates       = getUpcomingDates(14)
   const todayShifts = getShiftsForDate(today)
+
+  // Push notifications: 30 min, 10 min, and "leave now" alerts
+  useCommuteAlerts(todayShifts, getCategoryByKey)
 
   // Collect only dates that have at least one shift
   const upcomingDays = dates

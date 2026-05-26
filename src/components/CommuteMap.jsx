@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api'
-import { FACILITY_INFO } from '../utils/commuteCalc'
+import { FACILITY_INFO, DEFAULT_HOME } from '../utils/commuteCalc'
 
 const GOOGLE_LIBRARIES = ['places']
 const HOME_KEY         = 'shiftstack_home_location'
 const GEO_CACHE_KEY    = 'shiftstack_geocode_cache'
-const NASHVILLE        = { lat: 36.1627, lng: -86.7816 }
 
 const DARK_MAP_STYLES = [
   { elementType: 'geometry',               stylers: [{ color: '#141414' }] },
@@ -224,7 +223,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     )
   }
 
-  const mapCenter = home ?? workMarkers[0]?.pos ?? NASHVILLE
+  const mapCenter = home ?? workMarkers[0]?.pos ?? DEFAULT_HOME
 
   return (
     <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
