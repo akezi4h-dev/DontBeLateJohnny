@@ -2,33 +2,36 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { GoogleMap, useJsApiLoader, Marker, DirectionsRenderer } from '@react-google-maps/api'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 
-// Must be module-level constants — useJsApiLoader requires stable references
 const GOOGLE_LIBRARIES = ['places']
-const HOME_KEY = 'shiftstack_home_location'
-const GEO_CACHE_KEY = 'shiftstack_geocode_cache'
-const NASHVILLE = { lat: 36.1627, lng: -86.7816 }
+const HOME_KEY         = 'shiftstack_home_location'
+const GEO_CACHE_KEY    = 'shiftstack_geocode_cache'
+const NASHVILLE        = { lat: 36.1627, lng: -86.7816 }
 
 const DARK_MAP_STYLES = [
-  { elementType: 'geometry',            stylers: [{ color: '#141414' }] },
-  { elementType: 'labels.text.fill',    stylers: [{ color: '#5c5c5c' }] },
-  { elementType: 'labels.text.stroke',  stylers: [{ color: '#141414' }] },
-  { featureType: 'administrative',      elementType: 'geometry',           stylers: [{ color: '#2a2a2a' }] },
-  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9ca5b3' }] },
-  { featureType: 'poi',                 stylers: [{ visibility: 'off' }] },
-  { featureType: 'road',                elementType: 'geometry',           stylers: [{ color: '#2a2a2a' }] },
-  { featureType: 'road',                elementType: 'geometry.stroke',    stylers: [{ color: '#1a1a1a' }] },
-  { featureType: 'road',                elementType: 'labels.text.fill',   stylers: [{ color: '#6b7280' }] },
-  { featureType: 'road.highway',        elementType: 'geometry',           stylers: [{ color: '#333333' }] },
-  { featureType: 'road.highway',        elementType: 'geometry.stroke',    stylers: [{ color: '#222222' }] },
-  { featureType: 'transit',             stylers: [{ visibility: 'off' }] },
-  { featureType: 'water',               elementType: 'geometry',           stylers: [{ color: '#0a0a0a' }] },
+  { elementType: 'geometry',               stylers: [{ color: '#141414' }] },
+  { elementType: 'labels.text.fill',       stylers: [{ color: '#5c5c5c' }] },
+  { elementType: 'labels.text.stroke',     stylers: [{ color: '#141414' }] },
+  { featureType: 'administrative',         elementType: 'geometry',           stylers: [{ color: '#2a2a2a' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill',   stylers: [{ color: '#9ca5b3' }] },
+  { featureType: 'poi',                    stylers: [{ visibility: 'off' }] },
+  { featureType: 'road',                   elementType: 'geometry',           stylers: [{ color: '#2a2a2a' }] },
+  { featureType: 'road',                   elementType: 'geometry.stroke',    stylers: [{ color: '#1a1a1a' }] },
+  { featureType: 'road',                   elementType: 'labels.text.fill',   stylers: [{ color: '#6b7280' }] },
+  { featureType: 'road.highway',           elementType: 'geometry',           stylers: [{ color: '#333333' }] },
+  { featureType: 'road.highway',           elementType: 'geometry.stroke',    stylers: [{ color: '#222222' }] },
+  { featureType: 'transit',                stylers: [{ visibility: 'off' }] },
+  { featureType: 'water',                  elementType: 'geometry',           stylers: [{ color: '#0a0a0a' }] },
 ]
 
+// gestureHandling:'none' prevents the map from eating scroll/touch events on iOS
 const MAP_OPTIONS = {
-  styles: DARK_MAP_STYLES,
-  disableDefaultUI: true,
-  clickableIcons: false,
-  gestureHandling: 'cooperative',
+  styles:                DARK_MAP_STYLES,
+  disableDefaultUI:      true,
+  clickableIcons:        false,
+  gestureHandling:       'none',
+  draggable:             false,
+  scrollwheel:           false,
+  disableDoubleClickZoom: true,
 }
 
 function svgUrl(svg) {
@@ -43,7 +46,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     libraries: GOOGLE_LIBRARIES,
   })
 
-  const [home, setHome] = useState(() => {
+  const [home, setHome]           = useState(() => {
     try { return JSON.parse(localStorage.getItem(HOME_KEY)) } catch (_) { return null }
   })
   const [livePos, setLivePos]     = useState(null)
@@ -53,6 +56,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
   })
   const [settingHome, setSettingHome] = useState(false)
   const [mapRef, setMapRef]       = useState(null)
+  const [collapsed, setCollapsed] = useState(false)
 
   // ── Live GPS ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -71,9 +75,8 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     const employers = [...new Set(todayShifts.map((s) => s.employer))]
     const toGeocode = employers.filter((key) => {
       if (geoCache[key]) return false
-      const facility = FACILITY_INFO[key]
-      const cat      = getCategoryByKey(key)
-      return !!(facility?.address || cat?.address)
+      const address = FACILITY_INFO[key]?.address || getCategoryByKey(key)?.address
+      return !!address
     })
     if (!toGeocode.length) return
 
@@ -93,7 +96,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
     })
   }, [isLoaded, todayShifts, getCategoryByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Build directions whenever home or geocache changes ──────────────────
+  // ── Build directions ────────────────────────────────────────────────────
   useEffect(() => {
     if (!isLoaded || !home || !window.google || !todayShifts.length) {
       setDirections(null)
@@ -104,19 +107,41 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
       .filter(Boolean)
     if (!stops.length) return
 
-    const svc = new window.google.maps.DirectionsService()
-    svc.route(
+    new window.google.maps.DirectionsService().route(
       {
         origin:      home,
         destination: stops[stops.length - 1],
         waypoints:   stops.slice(0, -1).map((location) => ({ location, stopover: true })),
         travelMode:  window.google.maps.TravelMode.DRIVING,
       },
-      (result, status) => {
-        setDirections(status === 'OK' ? result : null)
-      }
+      (result, status) => setDirections(status === 'OK' ? result : null)
     )
   }, [isLoaded, home, geoCache, todayShifts])
+
+  // ── Work markers (memoised so fitBounds effect can depend on them) ──────
+  const workMarkers = useMemo(() =>
+    [...new Map(todayShifts.map((s) => [s.employer, s])).values()]
+      .map((shift) => {
+        const cat = getCategoryByKey(shift.employer)
+        const pos = geoCache[shift.employer]
+        return pos ? { pos, cat } : null
+      })
+      .filter(Boolean),
+    [todayShifts, geoCache, getCategoryByKey]
+  )
+
+  // ── Auto-fit bounds to show home + work pins ────────────────────────────
+  useEffect(() => {
+    if (!mapRef || !isLoaded || !window.google) return
+    const points = []
+    if (home) points.push(home)
+    workMarkers.forEach(({ pos }) => points.push(pos))
+    if (points.length < 2) return
+
+    const bounds = new window.google.maps.LatLngBounds()
+    points.forEach((p) => bounds.extend(p))
+    mapRef.fitBounds(bounds, { top: 48, right: 48, bottom: 64, left: 48 })
+  }, [mapRef, home, workMarkers, isLoaded])
 
   // ── Set home via GPS ────────────────────────────────────────────────────
   const handleSetHome = useCallback(() => {
@@ -128,14 +153,13 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
         localStorage.setItem(HOME_KEY, JSON.stringify(pos))
         setHome(pos)
         setSettingHome(false)
-        mapRef?.panTo(pos)
       },
       () => setSettingHome(false),
       { enableHighAccuracy: true, timeout: 10000 }
     )
-  }, [mapRef])
+  }, [])
 
-  // ── Marker icons (require isLoaded for google.maps constructors) ────────
+  // ── Marker icons ────────────────────────────────────────────────────────
   const homeIcon = useMemo(() => {
     if (!isLoaded) return null
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44"><path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 26 18 26S36 30 36 18C36 8.06 27.94 0 18 0z" fill="#ffffff"/><path d="M18 9 10 16.5h2.5V25h4.5v-5h2v5H23V16.5H25.5Z" fill="#141414"/></svg>`
@@ -149,11 +173,11 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
   const liveIcon = useMemo(() => {
     if (!isLoaded) return null
     return {
-      path:        window.google.maps.SymbolPath.CIRCLE,
-      scale:       8,
-      fillColor:   '#3b82f6',
-      fillOpacity: 1,
-      strokeColor: '#ffffff',
+      path:         window.google.maps.SymbolPath.CIRCLE,
+      scale:        8,
+      fillColor:    '#3b82f6',
+      fillOpacity:  1,
+      strokeColor:  '#ffffff',
       strokeWeight: 2.5,
     }
   }, [isLoaded])
@@ -186,7 +210,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
 
   if (loadError) {
     return (
-      <div className="mx-4 mb-4 h-16 rounded-2xl bg-[#1a1a1a] flex items-center justify-center">
+      <div className="mx-4 mb-4 h-12 rounded-2xl bg-[#1a1a1a] flex items-center justify-center">
         <span className="text-white/30 text-sm">Map failed to load</span>
       </div>
     )
@@ -194,85 +218,90 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
 
   if (!isLoaded) {
     return (
-      <div className="mx-4 mb-4 h-56 rounded-2xl bg-[#1a1a1a] flex items-center justify-center">
+      <div className="mx-4 mb-4 h-48 rounded-2xl bg-[#1a1a1a] flex items-center justify-center">
         <span className="text-white/30 text-sm">Loading map…</span>
       </div>
     )
   }
 
-  const workMarkers = [...new Map(todayShifts.map((s) => [s.employer, s])).values()]
-    .map((shift) => {
-      const cat = getCategoryByKey(shift.employer)
-      const pos = geoCache[shift.employer]
-      return pos ? { pos, cat } : null
-    })
-    .filter(Boolean)
-
   const mapCenter = home ?? workMarkers[0]?.pos ?? NASHVILLE
 
   return (
-    <div className="mx-4 mb-4 relative rounded-2xl overflow-hidden" style={{ height: 240 }}>
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
-        center={mapCenter}
-        zoom={home ? 12 : 11}
-        options={MAP_OPTIONS}
-        onLoad={setMapRef}
+    <div className="mx-4 mb-4 rounded-2xl overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
+
+      {/* ── Header strip — always visible, tap to collapse ── */}
+      <div
+        className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+        onClick={() => setCollapsed((c) => !c)}
       >
-        {/* Route polyline */}
-        {directions && (
-          <DirectionsRenderer
-            directions={directions}
-            options={{
-              suppressMarkers: true,
-              polylineOptions: {
-                strokeColor:   '#ffffff',
-                strokeOpacity: 0.45,
-                strokeWeight:  4,
-              },
-            }}
-          />
-        )}
-
-        {/* Home */}
-        {home && homeIcon && <Marker position={home} icon={homeIcon} zIndex={10} />}
-
-        {/* Work locations */}
-        {workMarkers.map(({ pos, cat }) => {
-          const icon = makeWorkIcon(cat.color)
-          return icon ? (
-            <Marker
-              key={cat.key ?? cat.name}
-              position={pos}
-              icon={icon}
-              zIndex={5}
-            />
-          ) : null
-        })}
-
-        {/* Live GPS dot */}
-        {livePos && liveIcon && (
-          <Marker position={livePos} icon={liveIcon} zIndex={20} />
-        )}
-      </GoogleMap>
-
-      {/* Set / update home overlay */}
-      <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
-        <button
-          onClick={handleSetHome}
-          disabled={settingHome}
-          className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
-          style={{
-            background:     'rgba(14,14,14,0.82)',
-            backdropFilter: 'blur(12px)',
-            border:         '1px solid rgba(255,255,255,0.12)',
-            color:          home ? 'rgba(255,255,255,0.45)' : '#ffffff',
-            fontFamily:     "'Syne', sans-serif",
-          }}
+        <div className="flex items-center gap-2">
+          <span className="text-sm">🗺️</span>
+          <span
+            className="text-xs font-bold uppercase tracking-widest"
+            style={{ color: 'rgba(255,255,255,0.4)', fontFamily: "'Space Grotesk', sans-serif" }}
+          >
+            Today's Route
+          </span>
+          {!home && (
+            <span className="text-[10px] text-white/25 font-normal">— set home to see route</span>
+          )}
+        </div>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(255,255,255,0.3)" strokeWidth="2.5"
+          style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}
         >
-          {settingHome ? '…' : home ? '📍 Update home' : '📍 Set home location'}
-        </button>
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
       </div>
+
+      {/* ── Map ── */}
+      {!collapsed && (
+        <div className="relative" style={{ height: 220 }}>
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height: '100%' }}
+            center={mapCenter}
+            zoom={10}
+            options={MAP_OPTIONS}
+            onLoad={setMapRef}
+          >
+            {directions && (
+              <DirectionsRenderer
+                directions={directions}
+                options={{
+                  suppressMarkers: true,
+                  polylineOptions: { strokeColor: '#ffffff', strokeOpacity: 0.45, strokeWeight: 4 },
+                }}
+              />
+            )}
+            {home && homeIcon    && <Marker position={home}   icon={homeIcon}  zIndex={10} />}
+            {livePos && liveIcon && <Marker position={livePos} icon={liveIcon} zIndex={20} />}
+            {workMarkers.map(({ pos, cat }) => {
+              const icon = makeWorkIcon(cat.color)
+              return icon ? <Marker key={cat.key ?? cat.name} position={pos} icon={icon} zIndex={5} /> : null
+            })}
+          </GoogleMap>
+
+          {/* Set / update home button */}
+          <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleSetHome() }}
+              disabled={settingHome}
+              className="pointer-events-auto flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
+              style={{
+                background:     'rgba(14,14,14,0.85)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border:         '1px solid rgba(255,255,255,0.12)',
+                color:          home ? 'rgba(255,255,255,0.45)' : '#ffffff',
+                fontFamily:     "'Syne', sans-serif",
+              }}
+            >
+              {settingHome ? '…' : home ? '📍 Update home' : '📍 Set home location'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
