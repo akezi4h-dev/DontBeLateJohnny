@@ -260,6 +260,7 @@ Every choice traces back to Johnny:
 ---
 
 # Section 11 : User Testing
+Johnny did not feel comfortable having his face photographed or recorded during user testing. To respect his privacy and maintain research ethics, documentation focused on screen recordings, interaction notes, interface observations, direct quotes, and workflow behaviors rather than identifiable imagery of the participant.
 
 ## First Click Through
 
