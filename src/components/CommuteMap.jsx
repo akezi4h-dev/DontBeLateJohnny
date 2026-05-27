@@ -28,7 +28,7 @@ const MAP_OPTIONS = {
   clickableIcons:        false,
   gestureHandling:       'greedy',   // one-finger pan on touch, scroll-wheel on desktop
   draggable:             true,
-  scrollwheel:           false,      // still block accidental scroll-to-zoom on desktop
+  scrollwheel:           true,
   disableDoubleClickZoom: true,
 }
 
