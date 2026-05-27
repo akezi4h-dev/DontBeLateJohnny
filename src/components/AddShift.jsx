@@ -37,15 +37,16 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
 
   // ── Location autocomplete ─────────────────────────────────────────────────
   const [location, setLocation]         = useState('')
-  const [locationValid, setLocationValid] = useState(false) // true only if picked from dropdown
+  const [locationValid, setLocationValid] = useState(false)
   const [suggestions, setSuggestions]   = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [noResults, setNoResults]       = useState(false)
+  const [locLoading, setLocLoading]     = useState(false)
+  const [activeIndex, setActiveIndex]   = useState(-1)
   const debounceRef     = useRef(null)
   const locationWrapRef = useRef(null)
-  const sessionTokenRef = useRef(null)
+  const pendingLocationRef = useRef('')
 
-  // Close dropdown on outside click
   useEffect(() => {
     const onMouseDown = (e) => {
       if (locationWrapRef.current && !locationWrapRef.current.contains(e.target)) {
@@ -56,39 +57,29 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [])
 
-  // Check the actual window object — more reliable than mapsLoaded timing
   const placesReady = () => !!window.google?.maps?.places?.AutocompleteService
-
-  const getSessionToken = () => {
-    if (!window.google?.maps?.places?.AutocompleteSessionToken) return undefined
-    if (!sessionTokenRef.current) {
-      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken()
-    }
-    return sessionTokenRef.current
-  }
 
   const queryPlaces = useCallback((value) => {
     if (!placesReady() || !value.trim()) return
     const svc = new window.google.maps.places.AutocompleteService()
-    svc.getPlacePredictions(
-      { input: value, sessionToken: getSessionToken() },
-      (preds, status) => {
-        const OK = window.google.maps.places.PlacesServiceStatus.OK
-        if (status === OK && preds?.length) {
-          setSuggestions(preds)
-          setNoResults(false)
-          setShowSuggestions(true)
-        } else {
-          setSuggestions([])
-          setNoResults(true)
-          setShowSuggestions(true)
-        }
+    svc.getPlacePredictions({ input: value }, (preds, status) => {
+      setLocLoading(false)
+      const OK = window.google.maps.places.PlacesServiceStatus.OK
+      if (status === OK && preds?.length) {
+        setSuggestions(preds)
+        setActiveIndex(-1)
+        setNoResults(false)
+        setShowSuggestions(true)
+      } else {
+        setSuggestions([])
+        setActiveIndex(-1)
+        setNoResults(true)
+        setShowSuggestions(true)
       }
-    )
-  }, []) // no deps — reads window.google at call time
+    })
+  }, [])
 
-  // Re-fire query when the Maps API finishes loading (user may have typed before it was ready)
-  const pendingLocationRef = useRef('')
+  // Re-fire when Maps API loads after user has already typed
   useEffect(() => {
     if (mapsLoaded && pendingLocationRef.current && !locationValid) {
       queryPlaces(pendingLocationRef.current)
@@ -99,9 +90,17 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setLocation(value)
     setLocationValid(false)
     setNoResults(false)
+    setActiveIndex(-1)
     pendingLocationRef.current = value
     clearTimeout(debounceRef.current)
-    if (!value.trim()) { setSuggestions([]); setShowSuggestions(false); return }
+    if (!value.trim()) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      setLocLoading(false)
+      return
+    }
+    setLocLoading(true)
+    setShowSuggestions(true)
     debounceRef.current = setTimeout(() => queryPlaces(value), 300)
   }
 
@@ -111,7 +110,38 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setSuggestions([])
     setNoResults(false)
     setShowSuggestions(false)
-    sessionTokenRef.current = null // reset token after selection (billing session complete)
+    setLocLoading(false)
+    setActiveIndex(-1)
+  }
+
+  const handleLocationKeyDown = (e) => {
+    if (!showSuggestions || !suggestions.length) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex(i => Math.min(i + 1, suggestions.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex(i => Math.max(i - 1, -1))
+    } else if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault()
+      handleSelectSuggestion(suggestions[activeIndex])
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false)
+      setActiveIndex(-1)
+    }
+  }
+
+  const highlightMatch = (text, matches) => {
+    if (!matches?.length) return <span>{text}</span>
+    const parts = []
+    let last = 0
+    matches.forEach(({ offset, length }, idx) => {
+      if (offset > last) parts.push(<span key={`t${idx}`} className="text-white/60">{text.slice(last, offset)}</span>)
+      parts.push(<span key={`m${idx}`} className="text-white font-semibold">{text.slice(offset, offset + length)}</span>)
+      last = offset + length
+    })
+    if (last < text.length) parts.push(<span key="end" className="text-white/60">{text.slice(last)}</span>)
+    return parts
   }
 
   const handleSave = async (e) => {
@@ -394,80 +424,114 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                   Location
                 </label>
                 <div className="relative">
-                  {/* Pin icon / valid check */}
+                  {/* Left icon */}
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm select-none pointer-events-none">
                     {locationValid ? '✅' : '📍'}
                   </span>
+
+                  {/* Right: spinner or clear */}
+                  {locLoading && (
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <span className="block w-4 h-4 rounded-full border-2 border-white/15 border-t-white/50 animate-spin" />
+                    </span>
+                  )}
+                  {!locLoading && location.trim() && !locationValid && (
+                    <button
+                      type="button"
+                      onMouseDown={(e) => { e.preventDefault(); handleLocationChange('') }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
+                      tabIndex={-1}
+                    >
+                      <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2">
+                        <path d="M1 1l8 8M9 1l-8 8" />
+                      </svg>
+                    </button>
+                  )}
+
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => handleLocationChange(e.target.value)}
-                    onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
+                    onFocus={() => { if (location.trim() && !locationValid) setShowSuggestions(true) }}
+                    onKeyDown={handleLocationKeyDown}
                     placeholder={FACILITY_INFO[employer]?.address || 'Search for an address or place…'}
-                    className="w-full rounded-xl pl-9 pr-4 py-3.5 text-white placeholder-white/20 outline-none transition-all text-sm"
+                    className="w-full rounded-xl pl-9 pr-9 py-3.5 text-white placeholder-white/20 outline-none transition-all text-sm"
                     style={{
                       backgroundColor: '#1a1a1a',
-                      boxShadow: location.trim() && !locationValid
+                      boxShadow: location.trim() && !locationValid && !locLoading
                         ? '0 0 0 1px rgba(239,68,68,0.5)'
                         : locationValid
                           ? '0 0 0 1px rgba(74,222,128,0.4)'
-                          : '0 0 0 1px rgba(255,255,255,0.08)',
+                          : showSuggestions
+                            ? '0 0 0 1px rgba(255,255,255,0.18)'
+                            : '0 0 0 1px rgba(255,255,255,0.08)',
                     }}
+                    autoComplete="off"
                   />
 
                   {/* Autocomplete dropdown */}
                   {showSuggestions && (
                     <div
-                      className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden"
-                      style={{ backgroundColor: '#222222', border: '1px solid rgba(255,255,255,0.1)' }}
+                      className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden shadow-xl"
+                      style={{ backgroundColor: '#1e1e1e', border: '1px solid rgba(255,255,255,0.12)' }}
                     >
-                      {suggestions.length > 0 ? (
+                      {locLoading ? (
+                        <div className="px-4 py-3 flex items-center gap-3">
+                          <span className="block w-3.5 h-3.5 rounded-full border-2 border-white/15 border-t-white/45 animate-spin flex-shrink-0" />
+                          <span className="text-white/35 text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                            Searching…
+                          </span>
+                        </div>
+                      ) : suggestions.length > 0 ? (
                         <ul>
-                          {suggestions.map((pred, i) => (
-                            <li key={pred.place_id}>
-                              <button
-                                type="button"
-                                onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(pred) }}
-                                className="w-full text-left px-4 py-3 text-sm transition-colors flex items-start gap-2"
-                                style={{
-                                  borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
-                                }}
-                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)' }}
-                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '' }}
-                              >
-                                <span className="text-white/30 mt-0.5 flex-shrink-0 text-xs">📍</span>
-                                <span>
-                                  <span className="text-white/90 font-medium block leading-snug">
-                                    {pred.structured_formatting?.main_text ?? pred.description}
+                          {suggestions.map((pred, i) => {
+                            const fmt  = pred.structured_formatting
+                            const main = fmt?.main_text ?? pred.description
+                            const sub  = fmt?.secondary_text
+                            const highlighted = highlightMatch(main, fmt?.main_text_matched_substrings)
+                            const isActive = i === activeIndex
+                            return (
+                              <li key={pred.place_id}>
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(pred) }}
+                                  onMouseEnter={() => setActiveIndex(i)}
+                                  onMouseLeave={() => setActiveIndex(-1)}
+                                  className="w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors"
+                                  style={{
+                                    backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                                    borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                  }}
+                                >
+                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" className="mt-0.5 flex-shrink-0">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                                    <circle cx="12" cy="10" r="3" />
+                                  </svg>
+                                  <span>
+                                    <span className="block leading-snug">{highlighted}</span>
+                                    {sub && (
+                                      <span className="text-white/35 text-xs mt-0.5 block" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                                        {sub}
+                                      </span>
+                                    )}
                                   </span>
-                                  {pred.structured_formatting?.secondary_text && (
-                                    <span
-                                      className="text-white/35 text-xs"
-                                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                                    >
-                                      {pred.structured_formatting.secondary_text}
-                                    </span>
-                                  )}
-                                </span>
-                              </button>
-                            </li>
-                          ))}
+                                </button>
+                              </li>
+                            )
+                          })}
                         </ul>
                       ) : noResults ? (
-                        <div className="px-4 py-3.5 flex items-center gap-2.5">
-                          <span className="text-white/25 text-sm flex-shrink-0">🔍</span>
+                        <div className="px-4 py-3.5 flex items-center gap-3">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" className="flex-shrink-0">
+                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                          </svg>
                           <div>
-                            <span
-                              className="text-white/50 text-sm block"
-                              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                            >
+                            <span className="text-white/45 text-sm block" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                               No locations found
                             </span>
-                            <span
-                              className="text-white/25 text-xs"
-                              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                            >
-                              Try a more specific address or place name
+                            <span className="text-white/25 text-xs" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                              Try a different address or place name
                             </span>
                           </div>
                         </div>
@@ -477,7 +541,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                 </div>
 
                 {/* Hint / error state */}
-                {location.trim() && !locationValid ? (
+                {location.trim() && !locationValid && !locLoading ? (
                   <p className="text-red-400/80 text-[10px] mt-1.5 px-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                     Select a result from the list — unrecognised locations won't appear on the map.
                   </p>
