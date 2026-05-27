@@ -22,14 +22,13 @@ const DARK_MAP_STYLES = [
   { featureType: 'water',                  elementType: 'geometry',           stylers: [{ color: '#0a0a0a' }] },
 ]
 
-// gestureHandling:'none' prevents the map from eating scroll/touch events on iOS
 const MAP_OPTIONS = {
   styles:                DARK_MAP_STYLES,
   disableDefaultUI:      true,
   clickableIcons:        false,
-  gestureHandling:       'none',
-  draggable:             false,
-  scrollwheel:           false,
+  gestureHandling:       'greedy',   // one-finger pan on touch, scroll-wheel on desktop
+  draggable:             true,
+  scrollwheel:           false,      // still block accidental scroll-to-zoom on desktop
   disableDoubleClickZoom: true,
 }
 
@@ -299,7 +298,7 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
 
       {/* ── Map ── */}
       {!collapsed && (
-        <div className="relative" style={{ height: 220 }}>
+        <div className="relative" style={{ height: 'min(50dvh, 50vh)' }}>
           <GoogleMap
             mapContainerStyle={{ width: '100%', height: '100%' }}
             center={mapCenter}
