@@ -43,9 +43,10 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const [noResults, setNoResults]       = useState(false)
   const [locLoading, setLocLoading]     = useState(false)
   const [activeIndex, setActiveIndex]   = useState(-1)
-  const debounceRef     = useRef(null)
-  const locationWrapRef = useRef(null)
+  const debounceRef      = useRef(null)
+  const locationWrapRef  = useRef(null)
   const pendingLocationRef = useRef('')
+  const sessionTokenRef  = useRef(null)
 
   useEffect(() => {
     const onMouseDown = (e) => {
@@ -59,10 +60,18 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
 
   const placesReady = () => !!window.google?.maps?.places?.AutocompleteService
 
+  const getSessionToken = () => {
+    if (!window.google?.maps?.places?.AutocompleteSessionToken) return undefined
+    if (!sessionTokenRef.current) {
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken()
+    }
+    return sessionTokenRef.current
+  }
+
   const queryPlaces = useCallback((value) => {
     if (!placesReady() || !value.trim()) return
     const svc = new window.google.maps.places.AutocompleteService()
-    svc.getPlacePredictions({ input: value }, (preds, status) => {
+    svc.getPlacePredictions({ input: value, sessionToken: getSessionToken() }, (preds, status) => {
       setLocLoading(false)
       const OK = window.google.maps.places.PlacesServiceStatus.OK
       if (status === OK && preds?.length) {
@@ -112,6 +121,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setShowSuggestions(false)
     setLocLoading(false)
     setActiveIndex(-1)
+    sessionTokenRef.current = null // end billing session
   }
 
   const handleConfirmFreeText = () => {
@@ -122,6 +132,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setShowSuggestions(false)
     setLocLoading(false)
     setActiveIndex(-1)
+    sessionTokenRef.current = null
   }
 
   const handleLocationKeyDown = (e) => {
