@@ -1,10 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { useJsApiLoader } from '@react-google-maps/api'
 import { PALETTE_PRESETS, EMOJI_OPTIONS } from '../hooks/useCategories'
 import { generateIconFromImage, generateIconFromDescription } from '../utils/generateCategoryIcon'
 import { removeBackground } from '../utils/preprocessImage'
-
-const MAPS_LIBRARIES = ['places']
 
 function normalizeSvg(svgStr, size) {
   return svgStr.replace(/<svg([^>]*)>/i, (_, attrs) => {
@@ -71,12 +68,9 @@ export default function CategoryEditor({ initial = {}, title = 'New Category', o
 
   const fileInputRef = useRef(null)
 
-  // ── Address autocomplete ───────────────────────────────────────────────────
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-  const { isLoaded: mapsLoaded } = useJsApiLoader({
-    googleMapsApiKey: apiKey ?? '',
-    libraries: MAPS_LIBRARIES,
-  })
+  // ── Address autocomplete ─────────────────────────────────────────────────
+  // No separate loader — Maps API is already loaded by AddShift/CommuteMap.
+  // addrPlacesReady() checks window.google directly at call time.
   const [addressValid, setAddressValid]   = useState(!!initial.address)
   const [addrSuggestions, setAddrSuggestions] = useState([])
   const [showAddrDrop, setShowAddrDrop]   = useState(false)
@@ -127,12 +121,6 @@ export default function CategoryEditor({ initial = {}, title = 'New Category', o
       }
     })
   }, [])
-
-  useEffect(() => {
-    if (mapsLoaded && addrPendingRef.current && !addressValid) {
-      queryAddr(addrPendingRef.current)
-    }
-  }, [mapsLoaded, addressValid, queryAddr])
 
   const handleAddressChange = (value) => {
     setAddress(value)
