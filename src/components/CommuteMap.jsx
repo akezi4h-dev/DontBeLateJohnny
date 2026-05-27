@@ -335,6 +335,34 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
             })}
           </GoogleMap>
 
+          {/* Zoom controls */}
+          <div
+            className="absolute top-3 right-3 flex flex-col pointer-events-none"
+            style={{ gap: '2px' }}
+          >
+            {['+', '−'].map((label, i) => (
+              <button
+                key={label}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (mapRef) mapRef.setZoom((mapRef.getZoom() ?? 10) + (i === 0 ? 1 : -1))
+                }}
+                className="pointer-events-auto w-8 h-8 flex items-center justify-center text-base font-bold transition-all active:scale-90"
+                style={{
+                  background:          'rgba(14,14,14,0.85)',
+                  backdropFilter:      'blur(12px)',
+                  WebkitBackdropFilter:'blur(12px)',
+                  border:              '1px solid rgba(255,255,255,0.12)',
+                  borderRadius:        i === 0 ? '8px 8px 4px 4px' : '4px 4px 8px 8px',
+                  color:               'rgba(255,255,255,0.7)',
+                  lineHeight:          1,
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           {/* Set / update home button */}
           <div className="absolute bottom-3 inset-x-0 flex justify-center pointer-events-none">
             <button
