@@ -63,5 +63,7 @@ If no confirmed shifts are found, return [].`,
 
   const data = await resp.json()
   const raw = data.content?.[0]?.text?.trim() ?? '[]'
-  return JSON.parse(raw)
+  // Strip markdown code fences the model sometimes adds despite instructions
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '')
+  return JSON.parse(cleaned)
 }
