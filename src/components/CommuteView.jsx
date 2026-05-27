@@ -222,9 +222,10 @@ export default function CommuteView() {
                     : `Leave by ${formatTime(leaveAt)}`
 
                   return (
-                    <div
+                    <button
                       key={shift.id}
-                      className="rounded-2xl p-4 flex items-center gap-4"
+                      onClick={() => setSelectedDate(date)}
+                      className="w-full rounded-2xl p-4 flex items-center gap-4 text-left transition-all active:scale-[0.98]"
                       style={{
                         backgroundColor: isLeaveNow
                           ? 'rgba(239,68,68,0.1)'
@@ -234,6 +235,7 @@ export default function CommuteView() {
                               ? 'rgba(255,255,255,0.03)'
                               : '#1a1a1a',
                         borderLeft: `3px solid ${shiftEnded ? 'rgba(255,255,255,0.08)' : cat.color}`,
+                        outline: isSelected ? `1px solid ${cat.color}40` : 'none',
                         opacity: shiftEnded ? 0.5 : 1,
                       }}
                     >
@@ -276,7 +278,7 @@ export default function CommuteView() {
                           </div>
                         )}
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
