@@ -62,7 +62,8 @@ export function ShiftsProvider({ children }) {
         table: 'shifts',
         filter: `user_id=eq.${user.id}`,
       }, ({ eventType, new: newRow, old: oldRow }) => {
-        if (eventType === 'INSERT') setShifts((p) => [...p, rowToShift(newRow)])
+        // Deduplicate INSERTs — optimistic update in addShift may have already added it
+        if (eventType === 'INSERT') setShifts((p) => p.some((s) => s.id === newRow.id) ? p : [...p, rowToShift(newRow)])
         else if (eventType === 'DELETE') setShifts((p) => p.filter((s) => s.id !== oldRow.id))
         else if (eventType === 'UPDATE') setShifts((p) => p.map((s) => s.id === newRow.id ? rowToShift(newRow) : s))
       })
@@ -87,7 +88,13 @@ export function ShiftsProvider({ children }) {
       .select()
       .single()
     if (error) throw error
-    return rowToShift(row)
+    const shift = rowToShift(row)
+    // Optimistically add to state immediately — don't wait for realtime subscription
+    setShifts((prev) => {
+      if (prev.some((s) => s.id === shift.id)) return prev
+      return [...prev, shift].sort((a, b) => a.date.localeCompare(b.date))
+    })
+    return shift
   }
 
   const updateShift = async (id, data) => {
