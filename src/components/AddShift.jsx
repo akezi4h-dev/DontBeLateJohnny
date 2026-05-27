@@ -54,12 +54,11 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     return () => document.removeEventListener('mousedown', onMouseDown)
   }, [])
 
+  // Check the actual window object — more reliable than mapsLoaded timing
+  const placesReady = () => !!window.google?.maps?.places?.AutocompleteService
+
   const queryPlaces = useCallback((value) => {
-    if (!mapsLoaded || !window.google || !value.trim()) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
+    if (!placesReady() || !value.trim()) return
     const svc = new window.google.maps.places.AutocompleteService()
     svc.getPlacePredictions(
       { input: value, types: ['establishment', 'geocode'] },
@@ -73,11 +72,20 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
         }
       }
     )
-  }, [mapsLoaded])
+  }, []) // no deps — reads window.google at call time
+
+  // Re-fire query when the Maps API finishes loading (user may have typed before it was ready)
+  const pendingLocationRef = useRef('')
+  useEffect(() => {
+    if (mapsLoaded && pendingLocationRef.current && !locationValid) {
+      queryPlaces(pendingLocationRef.current)
+    }
+  }, [mapsLoaded, locationValid, queryPlaces])
 
   const handleLocationChange = (value) => {
     setLocation(value)
     setLocationValid(false)
+    pendingLocationRef.current = value
     clearTimeout(debounceRef.current)
     if (!value.trim()) { setSuggestions([]); setShowSuggestions(false); return }
     debounceRef.current = setTimeout(() => queryPlaces(value), 300)
