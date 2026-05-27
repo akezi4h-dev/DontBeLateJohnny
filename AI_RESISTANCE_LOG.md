@@ -280,18 +280,68 @@ The constraint forced a simpler architecture. The edge function was a proxy that
 
 ---
 
-## Entry 15 — AI's "Fix" Introduced a Different Syntax Error
+## Entry 15 — AI's "Fix" Introduced a Different Syntax Error (Two Bad Commits in a Row)
 
 **What AI gave me:**
-A commit titled "Fix broken calendar grid — malformed IIFE closing syntax" that changed the MonthView IIFE closing from one broken sequence to a different broken sequence. The prior broken form was `})}())}` (7 chars, invocation and outer paren swapped). The "fixed" form was `})}()}` (6 chars, outer paren missing entirely). The calendar still showed `0` instead of date cells.
+The original broken IIFE closing on line 373 of `MonthView.jsx` was `})}())}` — 7 characters where the invocation `()` appeared before the outer paren `)`, making the sequence malformed. A prior session produced a commit titled "Fix broken calendar grid — malformed IIFE closing syntax." That commit changed the closing to `})}()}` — 6 characters. The calendar still showed a lone `0` in the grid area. A different broken sequence replaced the first one.
+
+**The full bracket analysis — why it was confusing:**
+
+The IIFE in MonthView opens on line 283 as `{(() => {` and the map callback opens on line 285 as `return cells.map((day, i) => {`. The correct closing, character by character:
+
+| Char | Closes |
+|------|--------|
+| `}` | map callback `(day, i) => {` |
+| `)` | `cells.map(` |
+| `}` | IIFE body `() => {` |
+| `)` | outer wrapping paren `(` from `{(` |
+| `(` | IIFE invocation open |
+| `)` | IIFE invocation close |
+| `}` | JSX expression `{` |
+
+Correct sequence: `})`)()}`  (7 characters).
+
+The "fixed" commit produced `})}()}` (6 characters) — the outer paren `)` was dropped entirely. The result is syntactically ambiguous: the JS parser sees the IIFE invoked inside a dangling expression with no outer paren to close, which evaluates to something React renders as `0`.
+
+**Why this happened — and why it keeps happening:**
+
+This IIFE was introduced in Entry 29 ("Past Date Fading") to scope `todayStr` inside the map. The pattern `{(() => { const x = ...; return array.map(...) })()}` has seven closing characters after the deepest nested content. Visually counting seven characters across `}`, `)`, `}`, `)`, `(`, `)`, `}` in an editor is prone to transposition and omission. Two separate attempts — once in the prior session's fix commit and once in the fix for that fix — both produced wrong sequences by visual inspection alone.
 
 **Why I rejected it:**
-The fix was wrong. It didn't test the JS in isolation before committing — it eyeballed the bracket sequence and produced a different malformed pattern. Node throws `SyntaxError: Unexpected token '('` on `})}()}` immediately. A 10-second node eval would have caught it before it reached the repo.
+
+The symptom (calendar shows `0`) was still present. `0` in React is a rendered falsy number, which means the JSX expression was evaluating to the number 0 rather than an array of elements. The "fixed" closing `})}()}` is not syntactically valid JavaScript: Node.js throws `SyntaxError: Unexpected token '('` on it immediately. Any JS runtime would reject it. Vite/Babel may have been more tolerant during the development build, but the CI pipeline runs `npm run build` which uses Vite's production build path — and that failed with exit code 1 (documented in Entry 26).
 
 **What was done instead:**
-Wrote a minimal Node script that reproduces the IIFE pattern with a plain array. Confirmed the error. Derived the correct 7-character closing `})})()}` (close map callback, close `.map(`, close IIFE body, close outer paren, invoke, close JSX). Re-tested in Node, confirmed 8 elements returned. Applied the fix, confirmed build passes, committed.
+
+Discarded visual bracket counting entirely. Reproduced the pattern in a plain Node eval:
+
+```js
+node -e "
+const cells = [null, null, null, null, null, 1, 2, 3];
+const result = (() => {
+  return cells.map((day, i) => {
+    if (!day) return 'empty';
+    return day;
+  })
+})();
+console.log(result.length);
+"
+```
+
+Output: `8` — correct. Then tested the broken form:
+
+```js
+})}()}  // inside equivalent structure
+```
+
+Node: `SyntaxError: Unexpected token '('` — confirmed broken. Then derived `})`)()}` from the bracket table above, tested it, got `8`, applied to `MonthView.jsx`, ran `npm run build` (3.05s clean), committed, pushed. CI went green.
+
+**What this episode reveals about the IIFE itself:**
+
+The root cause is not bad syntax-fixing — it's that the IIFE was the wrong tool for the job. `todayStr` is `toISODate(today.getFullYear(), today.getMonth(), today.getDate())` — a synchronous, pure expression. It should have been declared in component scope alongside `const cells = getCalendarDays(year, month)`. No IIFE, no 7-character closing sequence, no bracket errors possible. Every time this line has been edited since Entry 29, there has been a closing syntax bug. The IIFE is the cause, not an unlucky coincidence. (Documented separately in Resistance Entry 16.)
 
 **Why it's better:**
-The correct debugging method for bracket/paren sequence errors is execution, not counting. The IIFE pattern `{(() => { ... })()}` has enough nested delimiters that visual counting is unreliable. Running the pattern in Node produces an unambiguous error at the exact bad token. Testing the fix in the same way before committing would have prevented two broken commits in a row.
+
+Testing bracket sequences in isolation before committing is the only reliable method. Visual counting fails at depth ≥ 4. A 10-second `node -e` would have caught both broken commits before they reached the repo. The correct debugging loop for any closing-bracket question: write the minimal reproducer, run it, confirm the result, then apply to the source. The two bad commits cost two CI runs, two deployments to fix, and created the gap that led to the CI failure in Entry 26. Execution testing would have reduced that to zero.
 
 ---

@@ -396,41 +396,84 @@ Accepted. The single-request waypoints approach couldn't color individual legs �
 ## Entry 25 — Calendar Grid Rendering as "0"
 
 **Asked:**
-Screenshot showing the month view rendering a lone `0` in the calendar grid instead of date cells. Caption: "This still isn't working."
+Screenshot of the live app showing the month view rendering a lone `0` in the top-left corner of the calendar grid instead of day cells. The header ("What's good Johnny," "May 2026," the phrase line) and the day-of-week labels (Sun Mon Tue Wed Thu Fri Sat) both rendered correctly. Only the grid itself was broken. Caption: "This still isn't working."
 
 **Produced:**
-Diagnosed the cause by testing the IIFE closing sequence in isolation with Node. The closing on line 373 of `MonthView.jsx` was `})}()}` — only 6 characters, missing the `)` that closes the outer wrapping paren from `{(() => {`. In Node the pattern threw `SyntaxError: Unexpected token '('`. The correct sequence is `})})()}`: close map callback `}`, close `.map(` `)`, close IIFE body `}`, close outer paren `)`, invoke `()`, close JSX expression `}`. One character inserted, build passed, committed and pushed.
+Diagnostic sequence in three steps:
+
+1. **Read `MonthView.jsx` and `dateHelpers.js` in parallel.** `getCalendarDays` was correct — for May 2026 it produces a 36-element array: 5 nulls (padding for Mon–Fri before May 1) plus days 1–31. The symptom of rendering `0` instead of nothing pointed not at an empty array but at a React falsy-number render: in JSX, `{0}` renders "0" as text, whereas `{[]}`, `{null}`, `{false}`, `{undefined}` render nothing. This narrowed the cause to an expression somewhere in the JSX evaluating to the number 0.
+
+2. **Identified the IIFE as the source.** Line 283 opens `{(() => {` and line 373 was supposed to close it with `})`)()}` (7 characters: close map callback `}`, close `.map(` `)`, close IIFE body `}`, close outer paren `)`, invoke `(`, `)`, close JSX `}`). The actual line 373 read `})}()}` — only 6 characters. The outer wrapping paren from `(() => {` was never closed. This produced valid-looking (to the eye) but syntactically incorrect JS.
+
+3. **Tested in isolation with Node.** Attempted to use jsdom first; it wasn't installed. Pivoted to a plain `node -e` eval of the equivalent pattern:
+   ```js
+   const result = (() => {
+     return cells.map((day, i) => { ... })
+   })}()   // ← the broken form
+   ```
+   Node threw `SyntaxError: Unexpected token '('` immediately at the `(` after `})}`. Rewrote to `})`)()}`and re-tested — Node printed all 8 elements correctly. Applied the single-character insertion to `MonthView.jsx`, ran `npm run build` (3.05s, clean), committed, pushed.
+
+**Why `0` specifically:** The broken IIFE closed incorrectly such that the outer expression evaluated to `0` — likely the result of a coercion during React's reconciliation of the malformed JSX expression. React rendered the number `0` as text per its falsy-number rendering rule, which is why the grid area showed "0" rather than being blank.
 
 **Decided:**
-Accepted. The prior commit ("Fix broken calendar grid — malformed IIFE closing syntax") had attempted the same fix but produced `})}()}` instead of `})})()}` — a different malformed sequence. The real fix required testing the JS in isolation, not relying on Vite's tolerance.
+Accepted. The prior commit ("Fix broken calendar grid — malformed IIFE closing syntax") had attempted the same fix but produced `})}()}` instead of `})})()}` — trading one broken sequence for a different one. The real fix required execution testing, not visual bracket counting. See Resistance Entry 15 for the full diagnosis of why two commits in a row produced broken syntax.
 
 ---
 
 ## Entry 26 — GitHub Actions CI Failure on Deploy Job
 
 **Asked:**
-Screenshot of GitHub Actions showing `deploy-function` green, `deploy` red, exit code 1. No other context.
+Screenshot of GitHub Actions run for commit `628f882` ("Fix broken calendar grid — malformed IIFE closing syntax"), triggered 15 minutes earlier. The workflow showed two jobs: `deploy-function` (green, 18s) and `deploy` (red, 14s). Annotations panel showed: one error — "Process completed with exit code 1" on `deploy`; two warnings — both noting Node.js 20 deprecation on `actions/checkout@v4` and `actions/setup-node@v4`. Caption: "Fix this."
 
 **Produced:**
-Identified that the `deploy` job runs `npm run build`, and the same IIFE syntax error that broke the browser render also broke Vite's build step. The CI failure was a downstream symptom of Entry 25's bug. Applied the fix from Entry 25, confirmed `npm run build` completes successfully locally in 3.4s, committed, pushed.
+Diagnosis: The `deploy` job runs `actions/checkout@v4` → `actions/setup-node@v4` with Node 22 → `npm ci` → `npm run build` → upload artifact → `actions/deploy-pages@v4`. The exit code 1 was on the `deploy` job itself, not on a specific step annotation. `npm run build` is Vite, and Vite fails on JSX syntax errors at transform time. The IIFE closing bug from Entry 25 — `})}()}` — would cause Vite's esbuild transformer to throw the same `SyntaxError` that Node did, producing exit code 1 from the build step.
+
+Confirmed by running `npm run build` locally after applying the Entry 25 fix — 3.42s, clean, no errors. The fix that was already committed (Entry 25) resolved the CI failure. Pushed.
+
+**On the Node.js 20 deprecation warnings:** These are informational — `actions/checkout@v4` and `actions/setup-node@v4` both still work, they run on Node 24 due to the `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true` environment variable already in `deploy.yml`. No workflow changes needed. The warnings can be resolved later by bumping to `actions/checkout@v5` and `actions/setup-node@v5` when those are stable, but they do not affect build outcomes.
 
 **Decided:**
-Accepted. The CI pipeline is minimal — checkout, node setup, `npm ci`, `npm run build`, upload artifact, deploy pages. Syntax errors in JSX are the most common reason `npm run build` fails at this layer. No workflow changes were needed.
+Accepted. The `deploy-function` job being green while `deploy` was red confirmed the problem was specific to the build step, not the Supabase deployment or GitHub Pages configuration. A broken JSX file is always the first thing to check when `npm run build` fails after a commit that touched a component. No changes to the CI workflow were needed — the root cause was the code, not the pipeline.
 
 ---
 
 ## Entry 27 — Clickable Day Rows Show Route on Commute Map
 
 **Asked:**
-"Make it when I click on the day I can see the route for the day."
+"Make it when I click on the day I can see the route for the day." — referring to the upcoming-day rows in CommuteView (e.g., "Thursday May 28," "Friday May 29").
 
 **Produced:**
-Added `selectedDate` state to `CommuteView` (defaulting to today). Changed each day header from a `<div>` to a `<button>` with an `onClick` that sets the selected date. When a day is selected, a small `· route shown` badge appears next to the date label. The `selectedShifts` derived value (previously computed as `getShiftsForDate(selectedDate)`) is passed to `CommuteMap` via the `shifts` prop instead of `todayShifts`. `CommuteMap` was updated to accept `dateLabel` (e.g. `"Thursday"`) and render it as `"Thursday's Route"` in the map header strip.
+Five changes to two files:
 
-The geocoding, direction-building, and fitBounds effects in `CommuteMap` already depended on the `shifts` prop, so switching days re-geocodes new employers and re-routes automatically without further changes.
+**`CommuteView.jsx`:**
+1. Added `const [selectedDate, setSelectedDate] = useState(today)` — defaults to today so the map's initial state is unchanged.
+2. Added `const selectedShifts = getShiftsForDate(selectedDate)` and `const selectedLabel = formatDayLabel(selectedDate, selectedDate === today)` — derived from the selected date rather than always pulling from `today`.
+3. Changed each day section's header `<div>` to a `<button>` with `onClick={() => setSelectedDate(date)}`. Added `active:opacity-70 transition-opacity` for press feedback.
+4. Added a `· route shown` badge inline with the date label, visible only when `selectedDate === date`:
+   ```jsx
+   {isSelected && (
+     <span className="text-[10px] font-bold uppercase tracking-widest ml-1"
+       style={{ color: 'rgba(255,255,255,0.3)' }}>
+       · route shown
+     </span>
+   )}
+   ```
+5. Updated the `CommuteMap` call to `<CommuteMap shifts={selectedShifts} dateLabel={selectedLabel} ... />` replacing the previous `todayShifts` prop.
+
+**`CommuteMap.jsx`:**
+6. Changed the prop signature from `{ todayShifts, getCategoryByKey }` to `{ shifts: todayShifts, dateLabel, getCategoryByKey }` — destructure-rename keeps all internal references to `todayShifts` valid without a search-and-replace.
+7. Changed the map header label from the hardcoded string `"Today's Route"` to `{dateLabel ? \`${dateLabel}'s Route\` : "Today's Route"}` — handles "Today's," "Tomorrow's," "Thursday's," etc. via JavaScript's template literal possessive.
+
+**Why the day header and not the shift card:** The shift card already carries visual weight (the large time display, the leave-by label, the color border). Adding a click interaction to it would conflict visually with existing intent. The day label header (`Thursday  May 28`) is lightweight and clearly acts as a section selector — tapping it to change the map context is a natural group-select pattern, not a detail-select pattern.
+
+**The `· route shown` badge:** Without it, there's no confirmation that clicking the day did anything — the map update is smooth and silent. The badge is the minimal feedback signal: it confirms which day the map is currently displaying without a modal, toast, or color change on the map itself.
+
+**Reactivity:** No changes to the effects in `CommuteMap` were needed. The geocoding, direction-building, and fitBounds effects already had `todayShifts` (now `shifts`) in their dependency arrays. Switching the prop value from today's shifts to Thursday's shifts triggers those effects automatically — any new employers are geocoded on demand, routes are rebuilt, and the map pans and zooms to fit the new day's stops.
+
+**`getShiftsForDate` stability:** `getShiftsForDate` in `useShifts.jsx` is a plain inline function `(date) => shifts.filter(s => s.date === date)` — not a `useCallback`. This means `selectedShifts` is a new array reference on every render. For the direction-building effect in `CommuteMap` this creates a potential over-routing issue (effect re-runs every 30s when the live clock ticks). This was noted and accepted as a pre-existing characteristic of the commute map's reactivity, not a new regression introduced by this change.
 
 **Decided:**
-Accepted. The clickable day label is the right affordance — tapping the date header is intuitive and doesn't require the user to discover a hidden interaction. The `· route shown` badge confirms which day the map is currently displaying without adding heavy UI.
+Accepted. The interaction is discoverable, low-noise, and the `· route shown` badge closes the feedback loop without adding UI complexity.
 
 ---
 
@@ -439,21 +482,75 @@ Accepted. The clickable day label is the right affordance — tapping the date h
 **Asked:**
 "When I add a task for the day, can I also add a location for the task to add it as part of the commute tab?"
 
+**The intent decoded:** Tasks in the app are to-do items tied to a shift (e.g., "Pick up PPE," "Grab coffee"). A task with a location is an errand that must happen on the way to work — a pharmacy stop, a Kroger run, a detour. The feature request was to make those named locations appear on the commute map as actual route waypoints, not just text labels.
+
 **Produced:**
 Six files changed across four layers:
 
-1. **Database** — `supabase/migrations/003_add_task_location.sql` adds `location text default null` to the `tasks` table. `schema.sql` updated to match.
+**Layer 1 — Database:**
+- `supabase/migrations/003_add_task_location.sql`: `ALTER TABLE public.tasks ADD COLUMN location TEXT DEFAULT NULL;` — nullable so all existing task records are unaffected without any backfill.
+- `supabase/schema.sql` updated to include `location text default null` in the `tasks` table definition for documentation consistency.
 
-2. **`useTasks.jsx`** — `rowToTask` includes `location`. `addTask(shiftId, text, location?)` accepts an optional third argument. New `updateTaskLocation(id, location)` mutation exposed through the context.
+**Layer 2 — Data hook (`useTasks.jsx`):**
+- `rowToTask` extended: `location: row.location ?? null` — the `??` handles both `null` (DB default) and `undefined` (older cached rows).
+- `addTask(shiftId, text, location = null)` — optional third parameter with default `null`. Only writes the `location` column if a value is provided (`...(location ? { location } : {})`), keeping existing call sites (`addTask(shift.id, text)`) unchanged without needing updates.
+- New `updateTaskLocation(id, location)` mutation: `supabase.from('tasks').update({ location: location || null }).eq('id', id)` — the `|| null` coercion turns empty string into a real null, which removes the location badge cleanly rather than showing a blank pill.
+- `updateTaskLocation` added to the `TasksContext.Provider value` object.
 
-3. **`ShiftCard.jsx`** — `TaskRow` component gained a 📍 pin button that appears on hover: tapping opens an inline text input (blur/Enter saves, Escape cancels). When a location is set, it shows as a blue-tinted address badge below the task text. The add form gained a 📍 toggle button between the text field and the + button; toggling it reveals a location input that submits alongside the task text.
+**Layer 3 — Shift card UI (`ShiftCard.jsx`):**
 
-4. **`CommuteView.jsx`** — Imports `useTasks`. Computes `taskStops` (array of `{text, address}`) by calling `getTasksForShift` on each of the selected day's shifts, filtering to tasks with locations. Passes `taskStops` to `CommuteMap`.
+*`TaskRow` component* — gained local state (`editingLoc`, `locValue`) and a `useEffect` to sync `locValue` from `task.location` when the task is updated externally (realtime subscription). Three new UI states per task row:
 
-5. **`CommuteMap.jsx`** — Accepts `taskStops` prop. The single geocoding effect now handles both employer addresses (`geoCache[employer_key]`) and task stop addresses (`geoCache["task:<address>"]`). The direction-building effect adds geocoded task positions as `waypoints` to the first leg (home → first employer). A `taskIcon` (white pin with a checkmark SVG) is rendered as a distinct `<Marker>` for each geocoded task stop. `fitBounds` extended to include task stop positions.
+1. **No location, not editing:** The 📍 button is `opacity-0 group-hover:opacity-100` — invisible unless hovering. Color is `rgba(255,255,255,0.25)` (dim). Tapping opens the inline edit field.
+2. **Has location, not editing:** Blue-tinted badge below the task text (`color: rgba(96,165,250,0.6)`): `📍 Kroger on Hwy 31`. Tappable — clicking the badge opens the inline edit field for updating.
+3. **Editing:** An autofocused `<input>` below the task text. `onBlur` saves and closes. `Enter` saves. `Escape` discards and closes without writing. On save, calls `onLocationUpdate(task.id, trimmed || null)`.
+
+*Add task form* — the existing single-row form (`[input] [+]`) was restructured to `[input] [📍] [+]` with a second optional row:
+
+- The 📍 button toggles `showLocInput` state. When active, its background and color switch to the category color (`${color}28` bg, `color` text) — a visual confirmation it's active.
+- When `showLocInput` is true, a second `<input>` appears below: placeholder "Location (e.g. Kroger on Hwy 31)…". Submitting the form sends both `newTask` and `newTaskLoc` to `addTask`, then resets both and closes the location input.
+- Existing callers that don't pass `location` (`addTask(shift.id, text)`) continue to work — the third param defaults to `null`.
+
+**Layer 4 — Commute map (`CommuteView.jsx` + `CommuteMap.jsx`):**
+
+*`CommuteView.jsx`:*
+- Added `import { useTasks }` and destructured `getTasksForShift`.
+- `taskStops` derived inline:
+  ```js
+  const taskStops = selectedShifts
+    .flatMap((s) => getTasksForShift(s.id))
+    .filter((t) => t.location)
+    .map((t) => ({ text: t.text, address: t.location }))
+  ```
+  This runs on every render, which is acceptable because `getTasksForShift` is a `useCallback` that only changes when the full tasks array changes (realtime subscription). New task locations trigger a re-derive automatically.
+- `taskStops` added as a prop to `<CommuteMap>`.
+
+*`CommuteMap.jsx`:*
+- Prop signature: `{ shifts: todayShifts, dateLabel, taskStops = [], getCategoryByKey }` — default `[]` prevents null checks throughout.
+- **Geocoding effect** (merged): Previously geocoded only employer addresses. Now also geocodes task stop addresses, using `task:${stop.address}` as the cache key. The `task:` prefix is necessary — without it, an address like `"1211 Medical Center Dr, Nashville, TN"` could collide with an employer key named the same. Geocode results for both employers and task stops land in the same `geoCache` state object and the same `localStorage` key (`shiftstack_geocode_cache`), so all addresses persist across sessions.
+- **Direction-building effect**: `taskWaypoints` computed from geocached task positions:
+  ```js
+  const taskWaypoints = taskStops
+    .map((stop) => geoCache[`task:${stop.address}`])
+    .filter(Boolean)
+    .map((pos) => ({ location: pos, stopover: true }))
+  ```
+  Added only to the **first leg** (`i === 0`): the segment from home to the first employer. This reflects the typical errand use case — picking something up on the way to the first shift of the day, not between hospitals. `taskStops` added to the effect's dependency array.
+- **`taskIcon` useMemo**: A distinct SVG pin — smaller than the employer pin (24×30 vs 28×36), white fill at 85% opacity, with a checkmark path (`M9 13.5l3.5 3.5 6.5-6.5`) in `#141414`. `zIndex: 8` — above employer pins (5) but below home (10) and live position (20).
+- **`fitBounds` effect**: Extended to include task stop positions alongside home and work markers, so the map auto-pans to show all relevant points when a day with task stops is selected.
+
+**Key architectural decisions:**
+
+*Why first leg only:* Task stops are modeled as "on the way to work," not as stops between employers. Inserting them into the home→employer1 leg matches the actual errand pattern. Inserting them between employer1 and employer2 would require knowing which shift a task belongs to and mapping that to a specific leg — possible, but over-engineered for the current use case.
+
+*Why free-text address over coordinates:* The input is a plain text field ("Kroger on Hwy 31," "CVS Pharmacy"). Geocoding converts it to coordinates lazily on first map load and caches the result. This is frictionless for the user — no map picker, no address form. If the address fails to geocode, no marker appears and no waypoint is added; the route skips it silently rather than erroring.
+
+*Why `task:` prefix in geocache:* If both an employer and a task happened to share the same address string as a key, one would overwrite the other in `geoCache`. Prefixing all task addresses prevents that collision entirely.
+
+*Why `updateTaskLocation` not a general `updateTask`:* The existing mutations (`addTask`, `toggleTask`, `removeTask`) are each single-purpose. A general `updateTask(id, fields)` would be more flexible but also more footgun-prone — it's easy to accidentally overwrite `completed` when only meaning to change `location`. `updateTaskLocation` is explicit about what it modifies.
 
 **Decided:**
-Accepted. Adding task locations to the first leg only is the right default — the typical use case is a stop on the way to work, not between employers. The `task:` prefix on geocache keys avoids collisions with employer keys. Storing location as free-text address (rather than coordinates) keeps the input frictionless; geocoding happens on first map load and caches persistently.
+Accepted. The feature adds genuine value to the commute tab — Johnny can tag "pick up gloves at Walgreens" as a task with a location and see it on the route map as a waypoint stop, not just a text item. The implementation is backwards-compatible at every layer: existing tasks (no location) are unaffected, existing API calls work without modification, and the map degrades gracefully if no task locations are set.
 
 ---
 
