@@ -215,7 +215,12 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
       const { data, error } = await supabase.functions.invoke('extract-shifts', {
         body: { image, mediaType, year: new Date().getFullYear(), company },
       })
-      if (error) throw new Error(error.message || 'Server error')
+      if (error) {
+        const body = await error.context?.json().catch(() => null)
+        const msg = typeof body?.error === 'string' ? body.error
+          : body?.error?.message ?? body?.message ?? error.message ?? 'Server error'
+        throw new Error(msg)
+      }
 
       setProgress(100)
       const raw    = typeof data === 'string' ? JSON.parse(data) : data

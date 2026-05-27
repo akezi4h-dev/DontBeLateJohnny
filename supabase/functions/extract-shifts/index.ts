@@ -9,6 +9,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    if (!apiKey) {
+      console.error('ANTHROPIC_API_KEY is not set in Supabase edge function secrets')
+      return new Response(
+        JSON.stringify({ error: 'Server misconfiguration: ANTHROPIC_API_KEY secret is missing. Set it in Supabase Dashboard → Edge Functions → Secrets.' }),
+        { status: 500, headers: { ...CORS, 'content-type': 'application/json' } }
+      )
+    }
+
     const { image, mediaType, year, company } = await req.json()
     const currentYear = year ?? new Date().getFullYear()
     const companyName = company ?? 'Unknown'
@@ -16,7 +25,7 @@ Deno.serve(async (req) => {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'x-api-key': Deno.env.get('ANTHROPIC_API_KEY') ?? '',
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
@@ -61,11 +70,12 @@ If no confirmed shifts are found, return [].`,
     const data = await response.json()
 
     if (!response.ok || data.type === 'error') {
-      console.error('Claude API error:', JSON.stringify(data))
-      return new Response(JSON.stringify({ error: data.error ?? data }), {
-        status: 502,
-        headers: { ...CORS, 'content-type': 'application/json' },
-      })
+      const errMsg = data.error?.message ?? JSON.stringify(data.error ?? data)
+      console.error('Anthropic API error:', JSON.stringify(data))
+      return new Response(
+        JSON.stringify({ error: `Anthropic API error (${response.status}): ${errMsg}` }),
+        { status: 502, headers: { ...CORS, 'content-type': 'application/json' } }
+      )
     }
 
     const content = data.content?.[0]?.text ?? '[]'
@@ -75,6 +85,7 @@ If no confirmed shifts are found, return [].`,
       headers: { ...CORS, 'content-type': 'application/json' },
     })
   } catch (err) {
+    console.error('Unexpected error:', err)
     return new Response(JSON.stringify({ error: String(err) }), {
       status: 500,
       headers: { ...CORS, 'content-type': 'application/json' },

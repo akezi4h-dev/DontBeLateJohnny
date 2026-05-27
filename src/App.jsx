@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, Component } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { ShiftsProvider } from './hooks/useShifts'
 import { CategoriesProvider } from './hooks/useCategories'
@@ -16,6 +16,33 @@ import Toast from './components/Toast'
 import Confetti from './components/Confetti'
 import TodayView from './components/TodayView'
 import CommuteView from './components/CommuteView'
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-8">
+          <div className="max-w-sm w-full space-y-4 text-center">
+            <div className="text-4xl">⚠️</div>
+            <div className="text-white font-bold text-lg">Something went wrong</div>
+            <div className="text-left text-red-400/80 text-xs font-mono bg-white/5 rounded-xl p-4 break-all leading-relaxed">
+              {this.state.error?.message || String(this.state.error)}
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-white text-black font-bold rounded-xl px-6 py-3 text-sm active:scale-95 transition-all"
+            >
+              Reload app
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function todayISO() {
   const d = new Date()
@@ -158,12 +185,14 @@ export default function App() {
   if (!user) return <Login />
 
   return (
-    <CategoriesProvider>
-      <ShiftsProvider>
-        <TasksProvider>
-          <MainApp />
-        </TasksProvider>
-      </ShiftsProvider>
-    </CategoriesProvider>
+    <ErrorBoundary>
+      <CategoriesProvider>
+        <ShiftsProvider>
+          <TasksProvider>
+            <MainApp />
+          </TasksProvider>
+        </ShiftsProvider>
+      </CategoriesProvider>
+    </ErrorBoundary>
   )
 }

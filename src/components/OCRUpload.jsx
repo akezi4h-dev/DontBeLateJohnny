@@ -70,8 +70,10 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
 
       if (error) {
         const body = await error.context?.json().catch(() => null)
-        console.error('[extract-shifts error]', body)
-        throw new Error(body?.error || error.message || 'Server error')
+        const msg = typeof body?.error === 'string' ? body.error
+          : body?.error?.message ?? body?.message ?? error.message ?? 'Server error'
+        console.error('[extract-shifts error]', body ?? error)
+        throw new Error(msg)
       }
       setProgress(100)
 
