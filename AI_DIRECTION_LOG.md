@@ -556,6 +556,45 @@ Accepted. Free-text entry was the original implementation and had no safeguard a
 
 ---
 
+## Entry 38 — OCR Path Rewritten to Bypass Supabase Edge Function
+
+**Asked:**
+Screenshots were returning "Anthropic API error" (502) on both Mac and Windows. The Supabase `extract-shifts` Edge Function was using `claude-3-5-haiku-20241022`, a model that no longer exists on new Anthropic accounts in 2026. No terminal access and no Supabase CLI meant the edge function could not be redeployed with an updated model name.
+
+**Produced:**
+Created `src/utils/extractShifts.js` — a new client-side utility that calls the Anthropic API directly from the browser using `VITE_ANTHROPIC_API_KEY` (the same key already exposed for AI icon generation) with `anthropic-dangerous-direct-browser-access: 'true'`. Model set to `claude-haiku-4-5`. Exports a single function `extractShiftsFromImage(base64, mediaType, { year, company })` that returns the parsed shift array directly. Updated both `OCRUpload.jsx` and `AddShift.jsx` to import and call `extractShiftsFromImage` instead of `supabase.functions.invoke('extract-shifts', ...)`. Removed the `supabase` import from both components. The edge function still exists in the repo but is no longer called.
+
+**Decided:**
+Accepted. The `VITE_ANTHROPIC_API_KEY` is already in the browser bundle for icon generation — exposing it for screenshot extraction raises no new security surface for a single-user personal tool. The `anthropic-dangerous-direct-browser-access` header is the explicit opt-in Anthropic requires; using it is architecturally consistent with the icon generation path already in production. Bypassing the edge function entirely removed the dependency on an undeployable Supabase function and cut the round-trip latency by eliminating the proxy hop.
+
+---
+
+## Entry 39 — Markdown Fence Stripping in extractShifts.js
+
+**Asked:**
+After the edge function bypass shipped, a new error appeared: `Unexpected token '\`', "\`\`\`json [{"... is not valid JSON`. The model returned its response wrapped in markdown code fences despite the prompt explicitly saying "Return ONLY a raw JSON array — no markdown, no backticks, no explanation."
+
+**Produced:**
+One-line fix in `extractShifts.js`: after reading `data.content[0].text`, the raw string is cleaned with two regex replacements before `JSON.parse`: `raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '')`. Handles both ` ```json ` and plain ` ``` ` wrappers.
+
+**Decided:**
+Accepted. The prompt instruction is correct but the model is non-deterministic — it sometimes follows formatting instructions and sometimes doesn't, especially at lower temperature or on shorter responses. The defensive strip is the right layer to add this: cleaning the raw string before parsing means the code is correct whether or not the model obeys the instruction. The same strip was already present in the edge function from Entry 15; the new client-side path needed the same guard.
+
+---
+
+## Entry 40 — Mermaid Architecture Diagram in README
+
+**Asked:**
+"Make a mermaid diagram and add it to the section after user testing in the readme."
+
+**Produced:**
+Added Section 12: "App Architecture & User Flow" to `README.md` immediately following Section 11 (User Testing). The flowchart traces the full system from Supabase Auth entry through five screen paths: Upload Schedule (screenshot → Canvas compression → Anthropic AI → review → Supabase), Add Shift Manually (form → Google Places → Supabase), Month View (tap date → shift card → tasks → Supabase), Commute View (commuteCalc → leave-time display), and Today View (glance state). Realtime sync loop shown as a return edge from Supabase back to Month View.
+
+**Decided:**
+Accepted. The diagram bridges the UX research document and the technical implementation — it shows how the decisions traced through the README (screenshots, commute, tasks) map onto actual system components and data flows. GitHub renders Mermaid natively in READMEs, so no image export or external tool is needed.
+
+---
+
 ## Entry 37 — Autocomplete Dropdown Timing Fix
 
 **Asked:**

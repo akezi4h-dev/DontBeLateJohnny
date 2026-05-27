@@ -264,6 +264,22 @@ Reading `window.google.maps.places.AutocompleteService` is the ground truth — 
 
 ---
 
+## Entry 18 — No Terminal Forced Client-Side Architecture Over Server-Side Fix
+
+**What AI gave me:**
+The Supabase `extract-shifts` Edge Function was using `claude-3-5-haiku-20241022`, a model that no longer exists on new Anthropic accounts in 2026. Screenshots were returning 502 errors. The clean fix would have been to update the model string in `supabase/functions/extract-shifts/index.ts` and redeploy — a one-line change and one CLI command (`supabase functions deploy extract-shifts`). AI's default instinct was to fix the edge function and redeploy.
+
+**Why I rejected it:**
+No terminal access. No Supabase CLI installed. The Supabase dashboard "Edit via Editor" had already proven unreliable in Entry 15 — it let code be saved but didn't guarantee the secret or deploy state would match. Attempting another dashboard-based redeployment risked repeating the same sequence of silent failures that took multiple sessions to debug the first time.
+
+**What I did instead:**
+Bypassed the edge function entirely. Created `src/utils/extractShifts.js` to call the Anthropic API directly from the browser — the same pattern already used for AI icon generation in `generateCategoryIcon.js`. The `VITE_ANTHROPIC_API_KEY` was already in the bundle. No new infrastructure, no deployment step, no Supabase involvement.
+
+**Why it's better:**
+The constraint forced a simpler architecture. The edge function was a proxy that existed only to keep the API key server-side — a security pattern that doesn't apply when the same key is already in the browser bundle for another feature. Removing the proxy removed a network hop, a deployment dependency, a Supabase secret, and an entire failure surface. The result is fewer moving parts, not a compromise. Constraints in this project have consistently pushed toward better-architected solutions than the default path would have produced.
+
+---
+
 ## Entry 15 — AI's "Fix" Introduced a Different Syntax Error
 
 **What AI gave me:**
