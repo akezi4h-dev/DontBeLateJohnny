@@ -456,3 +456,80 @@ Six files changed across four layers:
 Accepted. Adding task locations to the first leg only is the right default — the typical use case is a stop on the way to work, not between employers. The `task:` prefix on geocache keys avoids collisions with employer keys. Storing location as free-text address (rather than coordinates) keeps the input frictionless; geocoding happens on first map load and caches persistently.
 
 ---
+
+## Entry 31 — Zoom +/− Buttons on Commute Map
+
+**Asked:**
+"Can you also add a plus and minus button for the map"
+
+**Produced:**
+Two frosted-glass buttons stacked in the top-right corner of the map container, absolutely positioned as an overlay with `pointer-events: none` on the wrapper and `pointer-events: auto` on each button so the map beneath stays interactive. `+` increments `mapRef.getZoom() + 1`; `−` decrements. Border radius is asymmetric: top button rounds on top corners, bottom button rounds on bottom corners, giving a joined pill appearance. Styled with `rgba(14,14,14,0.85)` background and `backdrop-filter: blur(12px)` matching the "Update home" button. The `−` uses the Unicode minus sign (`−`) rather than a hyphen to render at the correct visual weight.
+
+**Decided:**
+Accepted. `gestureHandling: 'none'` (at the time) blocked pinch-to-zoom on iOS, making the +/− buttons the only way to zoom on mobile. Programmatic zoom via `mapRef.setZoom()` works regardless of gestureHandling — the option only gates user gesture input, not API calls.
+
+---
+
+## Entry 32 — Half-Screen Map with Pan and Scroll Zoom
+
+**Asked:**
+"Make the map fit half of the screen when dragged the map can move and the user can look around" — followed by "drag also on laptop"
+
+**Produced:**
+Two separate commits:
+
+1. **Height + pan**: Changed map container from `height: 220` (fixed px) to `height: min(50dvh, 50vh)`. Changed `MAP_OPTIONS` from `gestureHandling: 'none', draggable: false` to `gestureHandling: 'greedy', draggable: true`. `gestureHandling: 'greedy'` lets one finger pan the map on touch without requiring a two-finger gesture; the map captures the touch event rather than passing it to the page scroll.
+
+2. **Scroll zoom on desktop**: `scrollwheel` was still `false` after the first commit, which blocked scroll-to-zoom on desktop. Set to `true`.
+
+**Decided:**
+Accepted both. The switch from `gestureHandling: 'none'` to `gestureHandling: 'greedy'` was necessary — `'none'` disables all gesture input entirely, which was the iOS scroll-protection workaround from an earlier session. Now that the map occupies half the screen and the user explicitly expects to interact with it, capturing touch is correct. `gestureHandling: 'cooperative'` (two-finger pan on touch) was not used because it produces a "use two fingers to move the map" overlay on accidental one-finger touches, which is worse UX for a dedicated map area.
+
+---
+
+## Entry 33 — Shift Cards as Map Selectors
+
+**Asked:**
+Screenshot of a shift card in the commute list. "When I also click the card can it interact with the map as well"
+
+**Produced:**
+Changed the shift card from a `<div>` to a `<button>` with `onClick={() => setSelectedDate(date)}` — the same call the day label button already makes. Added `active:scale-[0.98]` for press feedback. When the card's date is the currently selected map date (`isSelected`), the card gets a faint category-color `outline` ring (`${cat.color}40` opacity) to confirm the selection visually.
+
+**Decided:**
+Accepted. The day label button was already the right interaction, but it's a small tap target at the top of the section. Making the entire shift card tappable gives a much larger hit area for the same action — especially important on mobile where the cards dominate the screen. The outline ring closes the feedback loop: tapping any card shows which day the map is currently routing.
+
+---
+
+## Entry 34 — Shift Stack Logo in Sidebar
+
+**Asked:**
+Screenshot of sidebar showing "Yo Johnny" / "Good to see you Johnny" greeting. "Can you make it say shift stack for the words near the nav bar"
+
+**Produced:**
+Removed the `GREETINGS` array and random greeting from `Sidebar.jsx`. Replaced the greeting `<div>` with the three-bar icon + wordmark lockup matching the login screen: a 32×32 dark-rounded box containing three stacked bars in Publix green (#00A651), Vanderbilt gold (#CFB87C), and Nashville General blue (#2D6DB5) at 71% and 43% widths respectively, followed by "Shift" in white and "Stack" in `text-white/40`. `useState` import removed since it was only used for the greeting.
+
+**Decided:**
+Accepted. The rotating greeting was appropriate for a prototype but not for a tool used daily — it added noise without information. The logo is identifiable, consistent with the login screen, and leaves the sidebar header as a stable landmark rather than a random message.
+
+---
+
+## Entry 35 — Per-Shift Location Field Wired to Commute Map
+
+**Asked:**
+"For add shift make sure you can add location and that it affects the map"
+
+**Produced:**
+Four files changed across three layers:
+
+1. **Database** — `supabase/migrations/004_add_shift_location.sql` adds `location text DEFAULT NULL` to the `shifts` table.
+
+2. **`useShifts.jsx`** — `rowToShift` includes `location: row.location || null`. `addShift` and `updateShift` both write `location: data.location ?? null` to Supabase.
+
+3. **`AddShift.jsx`** — New 📍 Location field in the manual entry form, positioned above Notes. The placeholder text shows the category's default address from `FACILITY_INFO` (e.g. `1211 Medical Center Dr, Nashville, TN` for Vanderbilt) so the user knows what the map uses by default. A helper line reads "Leave blank to use the default address for this category." `FACILITY_INFO` imported from `commuteCalc.js`.
+
+4. **`CommuteMap.jsx`** — Geocoding effect now also geocodes custom shift locations with cache key `shift-loc:<address>`. Stop-building logic and `workMarkers` both check `shift.location && geoCache[\`shift-loc:${shift.location}\`]` first, falling back to the employer geocache key. This means a custom location silently overrides the employer default for both the map pin and the route polyline without any other UI change.
+
+**Decided:**
+Accepted. The `shift-loc:` prefix avoids collisions with the existing `employer` keys and the `task:` prefix already in use. The fallback chain (custom location → employer default) means all existing shifts continue to work without any data migration. Storing the location as a free-text address rather than pre-geocoded coordinates is consistent with how task locations are handled — frictionless input, lazy geocoding on first map load.
+
+---
