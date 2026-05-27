@@ -114,8 +114,18 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setActiveIndex(-1)
   }
 
+  const handleConfirmFreeText = () => {
+    if (!location.trim()) return
+    setLocationValid(true)
+    setSuggestions([])
+    setNoResults(false)
+    setShowSuggestions(false)
+    setLocLoading(false)
+    setActiveIndex(-1)
+  }
+
   const handleLocationKeyDown = (e) => {
-    if (!showSuggestions || !suggestions.length) return
+    if (!showSuggestions) return
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       setActiveIndex(i => Math.min(i + 1, suggestions.length - 1))
@@ -501,7 +511,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                                   className="w-full text-left px-4 py-3 text-sm flex items-start gap-3 transition-colors"
                                   style={{
                                     backgroundColor: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
-                                    borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
                                   }}
                                 >
                                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" className="mt-0.5 flex-shrink-0">
@@ -520,20 +530,48 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                               </li>
                             )
                           })}
+                          <li>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); handleConfirmFreeText() }}
+                              className="w-full text-left px-4 py-2.5 text-sm flex items-center gap-3 transition-colors"
+                              style={{ backgroundColor: 'transparent' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '' }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" className="flex-shrink-0">
+                                <path d="M12 5v14M5 12h14" />
+                              </svg>
+                              <span className="text-white/35 text-xs" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                                Use "<span className="text-white/55">{location}</span>" as custom address
+                              </span>
+                            </button>
+                          </li>
                         </ul>
                       ) : noResults ? (
-                        <div className="px-4 py-3.5 flex items-center gap-3">
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" className="flex-shrink-0">
-                            <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-                          </svg>
-                          <div>
-                            <span className="text-white/45 text-sm block" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                              No locations found
-                            </span>
-                            <span className="text-white/25 text-xs" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                              Try a different address or place name
+                        <div className="p-2">
+                          <div className="px-2 pb-2 pt-1 flex items-center gap-2">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2" className="flex-shrink-0">
+                              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+                            </svg>
+                            <span className="text-white/30 text-xs" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                              No matching places found
                             </span>
                           </div>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); handleConfirmFreeText() }}
+                            className="w-full text-left px-3 py-2.5 rounded-lg transition-colors"
+                            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)' }}
+                            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)' }}
+                          >
+                            <span className="text-white/50 text-sm">Use </span>
+                            <span className="text-white text-sm font-medium">"{location}"</span>
+                            <span className="text-white/30 text-xs block mt-0.5" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                              Save as custom address
+                            </span>
+                          </button>
                         </div>
                       ) : null}
                     </div>
