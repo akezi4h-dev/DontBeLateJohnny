@@ -232,6 +232,22 @@ The categories feature shipped as pure UI state. No Supabase dashboard changes, 
 
 ---
 
+## Entry 16 — AI Used an IIFE When a Variable Would Have Done It
+
+**What AI gave me:**
+When asked to fade past calendar dates, AI scoped `todayStr` inside `cells.map` by wrapping the entire map in an IIFE: `{(() => { const todayStr = ...; return cells.map(...) })()}`. This introduced a deeply nested bracket sequence that required precise closing syntax (`})`)()`) to terminate correctly.
+
+**Why I rejected it:**
+The IIFE was unnecessary complexity. `todayStr` is `toISODate(today.getFullYear(), today.getMonth(), today.getDate())` — a synchronous, side-effect-free expression. It can be computed in component scope on any render, the same way `const cells = getCalendarDays(year, month)` is computed. Nothing about it required block-scoping inside the map callback.
+
+**What was done instead:**
+The IIFE pattern broke the calendar across two commits before being fully repaired (documented in Direction Entries 25–26 and Resistance Entry 15). The root fix was having `todayStr` declared in component scope directly, where it could be referenced anywhere in the JSX without any extra wrapping.
+
+**Why it's better:**
+One line in the right place: `const todayStr = toISODate(today.getFullYear(), today.getMonth(), today.getDate())` alongside `const cells = getCalendarDays(year, month)`. No IIFE, no nested brackets, no bracket counting. The simpler the scope decision, the harder it is to break the closing syntax on the next edit.
+
+---
+
 ## Entry 15 — AI's "Fix" Introduced a Different Syntax Error
 
 **What AI gave me:**

@@ -367,6 +367,32 @@ Accepted. "9:30am → 6pm" reads naturally. "9:30a → 6p" was a shorthand that 
 
 ---
 
+## Entry 29 — Past Date Fading on Calendar Grid
+
+**Asked:**
+"When days pass by can you also make the date colors more faded for the day that passed by in order to differentiate between the days"
+
+**Produced:**
+Added an `isPast` flag to each calendar cell: `const isPast = !todayBadge && dateStr < todayStr`. Past cells receive `opacity: 0.35` on the button and `text-white/30` on the date number (instead of `text-white/80`). The today badge remains fully opaque and white-circle styled. Upcoming dates are unaffected. The `dateStr < todayStr` comparison works correctly because both are `YYYY-MM-DD` ISO strings — lexicographic order is identical to chronological order. To scope `todayStr` inside cells.map without making it a module-level constant, the map was wrapped in an IIFE: `{(() => { const todayStr = ...; return cells.map(...) })()}`.
+
+**Decided:**
+Accepted. The fading creates clear visual hierarchy between past and future at a glance — expired shifts recede, upcoming ones stay prominent. The IIFE was the cause of the syntax bugs documented in Entries 25 and 26 and Resistance Entry 15. In hindsight, `todayStr` should have been computed in component scope alongside `const cells = getCalendarDays(year, month)`, which would have avoided the IIFE entirely.
+
+---
+
+## Entry 30 — Colored Route Lines on Commute Map
+
+**Asked:**
+Screenshot of the commute map showing a single white/grey polyline between home and work. Request: "Can you also make the lines colored depending on the shift"
+
+**Produced:**
+Replaced the single `DirectionsService` request (home → all stops in one request with waypoints) with per-leg individual requests — one for each consecutive segment: home→stop1, stop1→stop2, etc. State changed from `directions: DirectionsResult | null` to `directionLegs: [{ directions: DirectionsResult, color: string }]`. Each leg object carries the destination category's hex color. Rendered as multiple `<DirectionsRenderer>` components, each with `polylineOptions: { strokeColor: leg.color, strokeOpacity: 0.8, strokeWeight: 5 }` and `suppressMarkers: true`. The waypoints array is built as `[{ pos: home, cat: null }, ...stops]` and sliced pairwise; the destination category's color is pulled from `to.cat?.color ?? '#ffffff'`.
+
+**Decided:**
+Accepted. The single-request waypoints approach couldn't color individual legs — the Directions API returns one polyline for the whole route. Per-leg requests are the only way to get segment-level color control. The visual result is immediately readable: each route segment matches the category color of the destination employer, so a day with two different employers shows two distinct colored paths on the map.
+
+---
+
 ## Entry 25 — Calendar Grid Rendering as "0"
 
 **Asked:**
