@@ -1,20 +1,5 @@
-import { useState } from 'react'
-import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import CatIcon from './CatIcon'
-
-const GREETINGS = [
-  'Hey Johnny',
-  "What's up Johnny",
-  'Hello Johnny',
-  'Yo Johnny',
-  "How's it going Johnny",
-  'Welcome back Johnny',
-  'Good to see you Johnny',
-  "What's good Johnny",
-  'Sup Johnny',
-  'Ready to go Johnny',
-]
 
 function todayISO() {
   const d = new Date()
@@ -72,11 +57,6 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
   const { categories } = useCategories()
   const builtins = categories.filter((c) => c.builtin)
 
-  // Pick a greeting once per mount (changes on page refresh)
-  const [greeting] = useState(
-    () => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]
-  )
-
   return (
     <aside
       className="fixed top-0 left-0 h-full hidden md:flex flex-col z-30"
@@ -86,13 +66,24 @@ export default function Sidebar({ activeTab, onTabChange, accentColor }) {
         borderRight: '1px solid #2a2a2a',
       }}
     >
-      {/* App name */}
-      <div className="px-5 pt-7 pb-5">
+      {/* Logo */}
+      <div className="px-5 pt-6 pb-5 flex items-center gap-3">
+        {/* Three-bar icon */}
         <div
-          className="text-xl font-black tracking-tight leading-snug"
+          className="flex flex-col justify-center gap-[4px] rounded-lg bg-[#1a1a1a] flex-shrink-0"
+          style={{ width: 32, height: 32, padding: '7px 7px' }}
+        >
+          <div className="rounded-sm bg-[#00A651]" style={{ height: 5 }} />
+          <div className="rounded-sm bg-[#CFB87C]" style={{ height: 5, width: '71%' }} />
+          <div className="rounded-sm bg-[#2D6DB5]" style={{ height: 5, width: '43%' }} />
+        </div>
+        {/* Wordmark */}
+        <div
+          className="text-lg font-black tracking-tight leading-none"
           style={{ fontFamily: "'Syne', sans-serif" }}
         >
-          {greeting}
+          <span className="text-white">Shift </span>
+          <span className="text-white/40">Stack</span>
         </div>
       </div>
 
