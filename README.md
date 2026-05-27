@@ -462,38 +462,70 @@ However, testing still revealed ongoing trust issues around OCR consistency. Cer
 
 ```mermaid
 flowchart TD
-    AUTH([Supabase Auth\nEmail login]) --> A
+    AUTH([Supabase Auth\nEmail · 90-day session]) --> A
 
-    A([Johnny opens DontBeLateJohnny]) --> B{Choose action}
+    A([DontBeLateJohnny\nPWA · GitHub Pages]) --> B{Screen}
 
-    B --> C[📅 Month View]
-    B --> D[📸 Upload Schedule]
-    B --> E[✍️ Add Shift Manually]
-    B --> F[🚗 Commute View]
-    B --> G[📋 Today View]
+    B --> MV[📅 Month View]
+    B --> TV[⚡ Today View]
+    B --> CV[🚗 Commute View]
+    B --> OC[📸 Upload Schedule]
+    B --> AS[✍️ Add Shift]
+    B --> CE[🎨 Category Editor]
 
-    D --> D1[Select · Paste ⌘V · Drag screenshot]
-    D1 --> D2[Canvas API\nCompress + convert to JPEG]
-    D2 --> D3[Anthropic API\nclaude-haiku-4-5\nExtract shift times from image]
-    D3 --> D4{Shifts\ndetected?}
-    D4 -->|Yes| D5[Review & confirm shifts]
-    D4 -->|No alert| D1
-    D5 --> DB
+    %% ── Upload Schedule path ─────────────────────────
+    OC --> OC1[Select employer\nlast choice stored in localStorage]
+    OC1 --> OC2[Drop · paste · capture screenshot]
+    OC2 --> OC3[Canvas API\nresize · compress · base64]
+    OC3 --> OC4[Anthropic claude-haiku-4-5\nbrowser-direct · dangerous-browser-access]
+    OC4 --> OC5[Strip markdown fences\nfilter null start/end times]
+    OC5 --> OC6{Shifts\nfound?}
+    OC6 -->|Yes| OC7[Review · confirm\nper-shift employer badge]
+    OC6 -->|No| OC2
+    OC7 --> DB
 
-    E --> E1[Date · Start time · End time · Notes]
-    E1 --> E2[Google Places API\nLocation autocomplete]
-    E2 --> DB
+    %% ── Add Shift manually ───────────────────────────
+    AS --> AS1[Date · time · employer\noptional custom location]
+    AS1 --> AS2[Google Places AutocompleteService\n300ms debounce · locationValid gate\nring color + pin icon feedback]
+    AS2 --> DB
 
-    C --> C1[Tap a date]
-    C1 --> C2[Shift Card\nTime · Employer color · Location]
-    C2 --> C3[Add or check off tasks]
-    C3 --> DB
+    %% ── Category Editor ──────────────────────────────
+    CE --> CEM{Icon method}
+    CEM -->|Emoji| CE2[Color palette · 30-emoji grid\nlive preview card]
+    CEM -->|AI Icon| CE3[Image upload or text description\nAnthropic claude-sonnet-4-6\nbrowser-direct · currentColor SVG]
+    CE3 --> CE2
+    CE2 --> LSCAT[(localStorage\nshiftstack_all_categories\nname · color · emoji · svgIcon)]
+    LSCAT --> ICONS[CatIcon component\nall views]
 
-    F --> F1[commuteCalc\nLeave-time estimate]
-    F1 --> F2[Next shift · Drive time · Depart by time]
+    %% ── Database + Realtime ──────────────────────────
+    DB[(Supabase Postgres\nshifts · tasks + optional locations)] --> RT[Realtime subscription]
+    RT --> MV
+    RT --> TV
+    RT --> CV
 
-    G --> G1[Today's shifts\nat a glance]
+    %% ── Month View ───────────────────────────────────
+    MV --> MV1[Calendar grid\nemployer emoji · color dots\ntask indicators · / ✓]
+    MV1 -->|Tap date| SC[Shift Card\ntime hero · task checklist\noptional task location 📍]
+    MV1 -->|Drag emoji| DRAG[Pointer Events API\n8px dead zone · floating clone\nreschedule on drop]
+    DRAG --> DB
+    SC --> DB
 
-    DB[(Supabase\nPostgres)] --> SYNC[Realtime sync\nacross all devices]
-    SYNC --> C
+    %% ── Today View ───────────────────────────────────
+    TV --> TV1[commuteCalc\nFACILITY_INFO drive times\nSpring Hill TN baseline]
+    TV1 --> TV2[30-second clock interval]
+    TV2 --> TV3{Urgency state}
+    TV3 -->|calm| TV4[Leave by HH:mm\ntask checklist]
+    TV3 -->|≤ 30 min| TV5[Leave in Nm\namber alert]
+    TV3 -->|leave time passed| TV6[Leave now!\nred alert · shift progress bar]
+
+    %% ── Commute View ─────────────────────────────────
+    CV --> NOTIF[useCommuteAlerts\nWeb Notification API\n30 min · 10 min · leave now]
+    CV --> CV1[Select day\ntap day header or shift card]
+    CV1 --> CV2[Shifts + task locations from DB]
+    CV2 --> CV3[Google Maps Geocoding\ntask: and shift-loc: cache keys\nstored in localStorage geocode_cache]
+    CV3 --> CV4[Directions API\none request per route leg]
+    CV4 --> CV5[Colored polylines\nper-employer hex stroke · 0.8 opacity]
+    CV4 --> CV6[Task stop waypoints\nfirst leg only]
+    CV5 --> MAP[Half-screen Google Map\nzoom +/− buttons · greedy gestures\nfitBounds to all markers]
+    CV6 --> MAP
 ```

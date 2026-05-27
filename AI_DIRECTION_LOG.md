@@ -732,10 +732,20 @@ This pattern is generalizable to every place in this project that calls an AI mo
 ## Entry 40 — Mermaid Architecture Diagram in README
 
 **Asked:**
-"Make a mermaid diagram and add it to the section after user testing in the readme."
+"Make a mermaid diagram and add it to the section after user testing in the readme." — later updated to match the full built system accurately.
 
 **Produced:**
-Added Section 12: "App Architecture & User Flow" to `README.md` immediately following Section 11 (User Testing). The flowchart traces the full system from Supabase Auth entry through five screen paths: Upload Schedule (screenshot → Canvas compression → Anthropic AI → review → Supabase), Add Shift Manually (form → Google Places → Supabase), Month View (tap date → shift card → tasks → Supabase), Commute View (commuteCalc → leave-time display), and Today View (glance state). Realtime sync loop shown as a return edge from Supabase back to Month View.
+Added Section 12: "App Architecture & User Flow" to `README.md` immediately following Section 11 (User Testing). The updated flowchart traces the full built system:
+
+- **Auth**: Supabase Auth, email + password, 90-day session
+- **Upload Schedule path**: employer selection (localStorage) → screenshot capture → Canvas API (resize/compress/base64) → `Anthropic claude-haiku-4-5` (browser-direct, `dangerous-browser-access`) → markdown fence strip + null-time filter → review screen → Supabase
+- **Add Shift path**: form (date/time/employer/optional location) → `Google Places AutocompleteService` (300ms debounce, `locationValid` gate, ring color feedback) → Supabase
+- **Category Editor path**: emoji + palette → localStorage; or image/text → `Anthropic claude-sonnet-4-6` (browser-direct) → `currentColor` SVG → localStorage (`shiftstack_all_categories`)
+- **`CatIcon` component**: reads localStorage categories, renders in all views
+- **Supabase Realtime**: subscription feeds Month View, Today View, and Commute View
+- **Month View**: calendar grid (emoji/color/task indicators) → tap date → Shift Card (time hero, task checklist, optional task location 📍 → Supabase); drag emoji → Pointer Events API (8px dead zone, floating clone) → reschedule → Supabase
+- **Today View**: `commuteCalc` (`FACILITY_INFO` hardcoded drive times from Spring Hill TN) → 30-second clock interval → urgency state machine (calm → amber → red/progress bar)
+- **Commute View**: `useCommuteAlerts` (Web Notification API, 30/10/0 min triggers); select day → shifts + task locations from Supabase → Google Maps Geocoding (`task:` and `shift-loc:` cache key prefixes, `localStorage shiftstack_geocode_cache`) → Directions API (one request per route leg) → colored polylines (per-employer hex) + task stop waypoints (first leg only) → half-screen interactive map (zoom buttons, greedy gestures, `fitBounds`)
 
 **Decided:**
 Accepted. The placement — Section 12, immediately following the User Testing section — is deliberate. The README traces the product from user research (Sections 1–3, Johnny's behavior observations and pain points) through design decisions (Sections 4–8, PRD decisions and UI system) to user testing feedback (Section 11). The architecture diagram at Section 12 closes the narrative: it shows how the decisions documented in the README actually translate into running system components and data flows. Without it, the README describes what was built and why; the diagram shows how it actually works as a connected system.
