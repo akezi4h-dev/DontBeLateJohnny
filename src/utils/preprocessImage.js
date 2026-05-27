@@ -1,4 +1,34 @@
 /**
+ * Compresses/resizes an image file using Canvas and returns a JPEG Blob.
+ * - Caps max dimension at 1920px (handles Mac Retina screenshots)
+ * - Converts HEIC/HEIF to JPEG automatically (Safari on Mac can decode HEIC into Canvas)
+ * - Output is always image/jpeg so Anthropic API accepts it reliably
+ */
+export function compressImage(file, maxDimension = 1920, quality = 0.88) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height))
+      const w = Math.round(img.width  * scale)
+      const h = Math.round(img.height * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width  = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Canvas compression failed')),
+        'image/jpeg',
+        quality,
+      )
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not load image — try PNG or JPG')) }
+    img.src = url
+  })
+}
+
+/**
  * Removes the background from an image using a corner-seeded flood fill on a
  * Canvas, then returns a base64-encoded PNG with a transparent background.
  *

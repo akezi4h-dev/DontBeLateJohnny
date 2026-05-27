@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { formatTime } from '../utils/dateHelpers'
 import { supabase } from '../lib/supabase'
+import { compressImage } from '../utils/preprocessImage'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
@@ -20,6 +21,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
   const [selected, setSelected]   = useState({})
   const [saving, setSaving]       = useState(false)
   const [showNewCat, setShowNewCat] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   const selectedCat = getCategoryByKey(employer)
   const color = selectedCat?.color ?? '#ffffff'
@@ -40,22 +42,26 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
   }
 
   // ── File handling ────────────────────────────────────────────────────────────
-  const toBase64 = (file) =>
+  const toBase64 = (blob) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload  = () => resolve(reader.result.split(',')[1])
       reader.onerror = reject
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(blob)
     })
 
   const handleFile = async (file) => {
     if (!file) return
     setStage('processing')
-    setProgress(50)
+    setProgress(20)
 
     try {
-      const image     = await toBase64(file)
-      const mediaType = file.type || 'image/jpeg'
+      // Compress + convert to JPEG — fixes Mac Retina size limit & HEIC format
+      const compressed = await compressImage(file)
+      setProgress(50)
+
+      const image     = await toBase64(compressed)
+      const mediaType = 'image/jpeg'
       const company   = getCategoryByKey(employer)?.name ?? 'Unknown'
 
       const { data, error } = await supabase.functions.invoke('extract-shifts', {
@@ -64,8 +70,8 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
 
       if (error) {
         const body = await error.context?.json().catch(() => null)
-        console.log('[extract-shifts error]', body)
-        throw error
+        console.error('[extract-shifts error]', body)
+        throw new Error(body?.error || error.message || 'Server error')
       }
       setProgress(100)
 
@@ -86,7 +92,7 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
 
       if (detected.length === 0) {
         setStage('idle')
-        alert('No work shifts found — only days off detected in this screenshot.')
+        alert('No work shifts found in this screenshot. Make sure the schedule is clearly visible.')
         return
       }
 
@@ -97,9 +103,20 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
     } catch (err) {
       console.error(err)
       setStage('idle')
-      alert('Could not read screenshot — try again.')
+      alert(`Could not read screenshot: ${err.message || 'Unknown error'}`)
     }
   }
+
+  // Paste from clipboard (Cmd+V on Mac)
+  useEffect(() => {
+    const onPaste = (e) => {
+      if (stage !== 'idle' || !employer) return
+      const imageItem = Array.from(e.clipboardData?.items || []).find((i) => i.type.startsWith('image/'))
+      if (imageItem) { e.preventDefault(); handleFile(imageItem.getAsFile()) }
+    }
+    document.addEventListener('paste', onPaste)
+    return () => document.removeEventListener('paste', onPaste)
+  }, [stage, employer]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const updateParsed = (id, key, value) =>
     setParsed((prev) => prev.map((s) => s._id === id ? { ...s, [key]: value } : s))
@@ -216,20 +233,34 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
               </p>
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-full border-2 border-dashed rounded-2xl p-12 flex flex-col items-center gap-3 hover:border-white/30 active:scale-98 transition-all"
-                style={{ borderColor: `${color}40` }}
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+                className="w-full border-2 border-dashed rounded-2xl p-10 flex flex-col items-center gap-3 transition-all"
+                style={{
+                  borderColor: isDragging ? color : `${color}40`,
+                  backgroundColor: isDragging ? `${color}10` : 'transparent',
+                  transform: isDragging ? 'scale(1.01)' : 'scale(1)',
+                }}
               >
-                <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={`${color}80`} strokeWidth="1.5">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={isDragging ? color : `${color}80`} strokeWidth="1.5">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="17 8 12 3 7 8" />
                   <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
-                <span className="text-white/35 text-sm font-medium">Tap to choose screenshot</span>
+                <div className="text-center">
+                  <span className="text-white/60 text-sm font-medium block">
+                    {isDragging ? 'Drop to read schedule' : 'Tap to choose screenshot'}
+                  </span>
+                  <span className="text-white/25 text-xs mt-1 block">
+                    or drag from Finder · paste with ⌘V
+                  </span>
+                </div>
               </button>
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,image/heic,image/heif"
                 className="hidden"
                 onChange={(e) => handleFile(e.target.files?.[0])}
               />

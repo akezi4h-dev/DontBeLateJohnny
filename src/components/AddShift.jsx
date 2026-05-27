@@ -5,6 +5,7 @@ import { useCategories } from '../hooks/useCategories'
 import { supabase } from '../lib/supabase'
 import { formatTime } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
+import { compressImage } from '../utils/preprocessImage'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
@@ -190,27 +191,31 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const [selected, setSelected] = useState({})
   const [ocrSaving, setOcrSaving] = useState(false)
 
-  const toBase64 = (file) =>
+  const toBase64 = (blob) =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload  = () => resolve(reader.result.split(',')[1])
       reader.onerror = reject
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(blob)
     })
 
   const handleFile = async (file) => {
     if (!file) return
     setOcrStage('processing')
-    setProgress(50)
+    setProgress(20)
     try {
-      const image     = await toBase64(file)
-      const mediaType = file.type || 'image/jpeg'
+      // Compress + convert to JPEG — fixes Mac Retina size limit & HEIC format
+      const compressed = await compressImage(file)
+      setProgress(50)
+
+      const image     = await toBase64(compressed)
+      const mediaType = 'image/jpeg'
       const company   = getCategoryByKey(employer)?.name ?? 'Unknown'
 
       const { data, error } = await supabase.functions.invoke('extract-shifts', {
         body: { image, mediaType, year: new Date().getFullYear(), company },
       })
-      if (error) throw error
+      if (error) throw new Error(error.message || 'Server error')
 
       setProgress(100)
       const raw    = typeof data === 'string' ? JSON.parse(data) : data
@@ -229,7 +234,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
 
       if (detected.length === 0) {
         setOcrStage('idle')
-        alert('No work shifts found — only days off detected in this screenshot.')
+        alert('No work shifts found in this screenshot. Make sure the schedule is clearly visible.')
         return
       }
 
@@ -240,7 +245,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     } catch (err) {
       console.error(err)
       setOcrStage('idle')
-      alert('Could not read screenshot — try again.')
+      alert(`Could not read screenshot: ${err.message || 'Unknown error'}`)
     }
   }
 
@@ -640,13 +645,13 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="w-full rounded-2xl p-12 flex flex-col items-center gap-4 transition-all active:scale-98 hover:border-white/20"
-                    style={{
-                      border: `2px dashed ${color}50`,
-                      backgroundColor: `${color}08`,
-                    }}
+                    onDragOver={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = color; e.currentTarget.style.backgroundColor = `${color}15` }}
+                    onDragLeave={(e) => { e.currentTarget.style.borderColor = `${color}50`; e.currentTarget.style.backgroundColor = `${color}08` }}
+                    onDrop={(e) => { e.preventDefault(); e.currentTarget.style.borderColor = `${color}50`; e.currentTarget.style.backgroundColor = `${color}08`; const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+                    className="w-full rounded-2xl p-10 flex flex-col items-center gap-3 transition-all"
+                    style={{ border: `2px dashed ${color}50`, backgroundColor: `${color}08` }}
                   >
-                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke={`${color}80`} strokeWidth="1.5">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={`${color}80`} strokeWidth="1.5">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
@@ -659,14 +664,14 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                         className="text-white/30 text-xs text-center mt-1"
                         style={{ fontFamily: "'Space Grotesk', sans-serif" }}
                       >
-                        Dates and times are read automatically
+                        drag from Finder · paste with ⌘V
                       </div>
                     </div>
                   </button>
                   <input
                     ref={fileRef}
                     type="file"
-                    accept="image/*"
+                    accept="image/*,image/heic,image/heif"
                     className="hidden"
                     onChange={(e) => handleFile(e.target.files?.[0])}
                   />
