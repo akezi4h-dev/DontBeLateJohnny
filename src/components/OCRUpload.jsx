@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { formatTime } from '../utils/dateHelpers'
-import { supabase } from '../lib/supabase'
 import { compressImage } from '../utils/preprocessImage'
+import { extractShiftsFromImage } from '../utils/extractShifts'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
@@ -64,21 +64,11 @@ export default function OCRUpload({ onBack, onSuccess, onNewCategory }) {
       const mediaType = 'image/jpeg'
       const company   = getCategoryByKey(employer)?.name ?? 'Unknown'
 
-      const { data, error } = await supabase.functions.invoke('extract-shifts', {
-        body: { image, mediaType, year: new Date().getFullYear(), company },
+      const shifts = await extractShiftsFromImage(image, mediaType, {
+        year: new Date().getFullYear(),
+        company,
       })
-
-      if (error) {
-        const body = await error.context?.json().catch(() => null)
-        const msg = typeof body?.error === 'string' ? body.error
-          : body?.error?.message ?? body?.message ?? error.message ?? 'Server error'
-        console.error('[extract-shifts error]', body ?? error)
-        throw new Error(msg)
-      }
       setProgress(100)
-
-      const raw    = typeof data === 'string' ? JSON.parse(data) : data
-      const shifts = Array.isArray(raw) ? raw : []
 
       const currentYear = new Date().getFullYear()
       const detected = shifts

@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useJsApiLoader } from '@react-google-maps/api'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
-import { supabase } from '../lib/supabase'
 import { formatTime } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 import { compressImage } from '../utils/preprocessImage'
+import { extractShiftsFromImage } from '../utils/extractShifts'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
@@ -212,19 +212,11 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
       const mediaType = 'image/jpeg'
       const company   = getCategoryByKey(employer)?.name ?? 'Unknown'
 
-      const { data, error } = await supabase.functions.invoke('extract-shifts', {
-        body: { image, mediaType, year: new Date().getFullYear(), company },
+      const shifts = await extractShiftsFromImage(image, mediaType, {
+        year: new Date().getFullYear(),
+        company,
       })
-      if (error) {
-        const body = await error.context?.json().catch(() => null)
-        const msg = typeof body?.error === 'string' ? body.error
-          : body?.error?.message ?? body?.message ?? error.message ?? 'Server error'
-        throw new Error(msg)
-      }
-
       setProgress(100)
-      const raw    = typeof data === 'string' ? JSON.parse(data) : data
-      const shifts = Array.isArray(raw) ? raw : []
 
       const currentYear = new Date().getFullYear()
       const detected = shifts
