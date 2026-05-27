@@ -366,3 +366,67 @@ One-line change in `formatTime` in `dateHelpers.js`: changed the period suffix f
 Accepted. "9:30am → 6pm" reads naturally. "9:30a → 6p" was a shorthand that made sense in code but looked unfinished in the UI.
 
 ---
+
+## Entry 25 — Calendar Grid Rendering as "0"
+
+**Asked:**
+Screenshot showing the month view rendering a lone `0` in the calendar grid instead of date cells. Caption: "This still isn't working."
+
+**Produced:**
+Diagnosed the cause by testing the IIFE closing sequence in isolation with Node. The closing on line 373 of `MonthView.jsx` was `})}()}` — only 6 characters, missing the `)` that closes the outer wrapping paren from `{(() => {`. In Node the pattern threw `SyntaxError: Unexpected token '('`. The correct sequence is `})})()}`: close map callback `}`, close `.map(` `)`, close IIFE body `}`, close outer paren `)`, invoke `()`, close JSX expression `}`. One character inserted, build passed, committed and pushed.
+
+**Decided:**
+Accepted. The prior commit ("Fix broken calendar grid — malformed IIFE closing syntax") had attempted the same fix but produced `})}()}` instead of `})})()}` — a different malformed sequence. The real fix required testing the JS in isolation, not relying on Vite's tolerance.
+
+---
+
+## Entry 26 — GitHub Actions CI Failure on Deploy Job
+
+**Asked:**
+Screenshot of GitHub Actions showing `deploy-function` green, `deploy` red, exit code 1. No other context.
+
+**Produced:**
+Identified that the `deploy` job runs `npm run build`, and the same IIFE syntax error that broke the browser render also broke Vite's build step. The CI failure was a downstream symptom of Entry 25's bug. Applied the fix from Entry 25, confirmed `npm run build` completes successfully locally in 3.4s, committed, pushed.
+
+**Decided:**
+Accepted. The CI pipeline is minimal — checkout, node setup, `npm ci`, `npm run build`, upload artifact, deploy pages. Syntax errors in JSX are the most common reason `npm run build` fails at this layer. No workflow changes were needed.
+
+---
+
+## Entry 27 — Clickable Day Rows Show Route on Commute Map
+
+**Asked:**
+"Make it when I click on the day I can see the route for the day."
+
+**Produced:**
+Added `selectedDate` state to `CommuteView` (defaulting to today). Changed each day header from a `<div>` to a `<button>` with an `onClick` that sets the selected date. When a day is selected, a small `· route shown` badge appears next to the date label. The `selectedShifts` derived value (previously computed as `getShiftsForDate(selectedDate)`) is passed to `CommuteMap` via the `shifts` prop instead of `todayShifts`. `CommuteMap` was updated to accept `dateLabel` (e.g. `"Thursday"`) and render it as `"Thursday's Route"` in the map header strip.
+
+The geocoding, direction-building, and fitBounds effects in `CommuteMap` already depended on the `shifts` prop, so switching days re-geocodes new employers and re-routes automatically without further changes.
+
+**Decided:**
+Accepted. The clickable day label is the right affordance — tapping the date header is intuitive and doesn't require the user to discover a hidden interaction. The `· route shown` badge confirms which day the map is currently displaying without adding heavy UI.
+
+---
+
+## Entry 28 — Task Locations as Commute Waypoints
+
+**Asked:**
+"When I add a task for the day, can I also add a location for the task to add it as part of the commute tab?"
+
+**Produced:**
+Six files changed across four layers:
+
+1. **Database** — `supabase/migrations/003_add_task_location.sql` adds `location text default null` to the `tasks` table. `schema.sql` updated to match.
+
+2. **`useTasks.jsx`** — `rowToTask` includes `location`. `addTask(shiftId, text, location?)` accepts an optional third argument. New `updateTaskLocation(id, location)` mutation exposed through the context.
+
+3. **`ShiftCard.jsx`** — `TaskRow` component gained a 📍 pin button that appears on hover: tapping opens an inline text input (blur/Enter saves, Escape cancels). When a location is set, it shows as a blue-tinted address badge below the task text. The add form gained a 📍 toggle button between the text field and the + button; toggling it reveals a location input that submits alongside the task text.
+
+4. **`CommuteView.jsx`** — Imports `useTasks`. Computes `taskStops` (array of `{text, address}`) by calling `getTasksForShift` on each of the selected day's shifts, filtering to tasks with locations. Passes `taskStops` to `CommuteMap`.
+
+5. **`CommuteMap.jsx`** — Accepts `taskStops` prop. The single geocoding effect now handles both employer addresses (`geoCache[employer_key]`) and task stop addresses (`geoCache["task:<address>"]`). The direction-building effect adds geocoded task positions as `waypoints` to the first leg (home → first employer). A `taskIcon` (white pin with a checkmark SVG) is rendered as a distinct `<Marker>` for each geocoded task stop. `fitBounds` extended to include task stop positions.
+
+**Decided:**
+Accepted. Adding task locations to the first leg only is the right default — the typical use case is a stop on the way to work, not between employers. The `task:` prefix on geocache keys avoids collisions with employer keys. Storing location as free-text address (rather than coordinates) keeps the input frictionless; geocoding happens on first map load and caches persistently.
+
+---

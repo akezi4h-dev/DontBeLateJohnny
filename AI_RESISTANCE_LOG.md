@@ -231,3 +231,19 @@ Categories are stored entirely in `localStorage` under `shiftstack_all_categorie
 The categories feature shipped as pure UI state. No Supabase dashboard changes, no SQL to run, no migration. The existing shift records in Supabase store category keys (`publix`, `vanderbilt`, `nashville_general`, `custom_1234`). The display layer reads the key and looks it up in categories — so renaming a category or changing its color is instant and zero-cost. The tradeoff is that categories don't sync between devices (Johnny's phone and desktop would have different custom categories), but Johnny hasn't asked for that and the built-in three are always present on every device.
 
 ---
+
+## Entry 15 — AI's "Fix" Introduced a Different Syntax Error
+
+**What AI gave me:**
+A commit titled "Fix broken calendar grid — malformed IIFE closing syntax" that changed the MonthView IIFE closing from one broken sequence to a different broken sequence. The prior broken form was `})}())}` (7 chars, invocation and outer paren swapped). The "fixed" form was `})}()}` (6 chars, outer paren missing entirely). The calendar still showed `0` instead of date cells.
+
+**Why I rejected it:**
+The fix was wrong. It didn't test the JS in isolation before committing — it eyeballed the bracket sequence and produced a different malformed pattern. Node throws `SyntaxError: Unexpected token '('` on `})}()}` immediately. A 10-second node eval would have caught it before it reached the repo.
+
+**What was done instead:**
+Wrote a minimal Node script that reproduces the IIFE pattern with a plain array. Confirmed the error. Derived the correct 7-character closing `})})()}` (close map callback, close `.map(`, close IIFE body, close outer paren, invoke, close JSX). Re-tested in Node, confirmed 8 elements returned. Applied the fix, confirmed build passes, committed.
+
+**Why it's better:**
+The correct debugging method for bracket/paren sequence errors is execution, not counting. The IIFE pattern `{(() => { ... })()}` has enough nested delimiters that visual counting is unreliable. Running the pattern in Node produces an unambiguous error at the exact bad token. Testing the fix in the same way before committing would have prevented two broken commits in a row.
+
+---
