@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense, Component } from 'react'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
+import { useTasks } from '../hooks/useTasks.jsx'
 import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 import { useCommuteAlerts } from '../hooks/useCommuteAlerts'
@@ -82,6 +83,7 @@ export default function CommuteView() {
 
   const { getShiftsForDate } = useShifts()
   const { getCategoryByKey }  = useCategories()
+  const { getTasksForShift }  = useTasks()
 
   const today       = todayISO()
   const dates       = getUpcomingDates(14)
@@ -90,6 +92,12 @@ export default function CommuteView() {
   const [selectedDate, setSelectedDate] = useState(today)
   const selectedShifts  = getShiftsForDate(selectedDate)
   const selectedLabel   = formatDayLabel(selectedDate, selectedDate === today)
+
+  // Tasks with locations for the selected day → commute waypoints
+  const taskStops = selectedShifts
+    .flatMap((s) => getTasksForShift(s.id))
+    .filter((t) => t.location)
+    .map((t) => ({ text: t.text, address: t.location }))
 
   // Push notifications: 30 min, 10 min, and "leave now" alerts
   useCommuteAlerts(todayShifts, getCategoryByKey)
@@ -126,7 +134,7 @@ export default function CommuteView() {
       {/* ── Map ────────────────────────────────────────────────────────────── */}
       <MapErrorBoundary>
         <Suspense fallback={MAP_FALLBACK}>
-          <CommuteMap shifts={selectedShifts} dateLabel={selectedLabel} getCategoryByKey={getCategoryByKey} />
+          <CommuteMap shifts={selectedShifts} dateLabel={selectedLabel} taskStops={taskStops} getCategoryByKey={getCategoryByKey} />
         </Suspense>
       </MapErrorBoundary>
 

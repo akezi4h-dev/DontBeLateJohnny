@@ -17,6 +17,7 @@ create table public.tasks (
   shift_id    uuid references public.shifts on delete cascade not null,
   text        text not null,
   completed   boolean default false,
+  location    text default null,
   created_at  timestamptz default now()
 );
 

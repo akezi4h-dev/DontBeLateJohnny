@@ -37,7 +37,7 @@ function svgUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategoryByKey }) {
+export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops = [], getCategoryByKey }) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -68,20 +68,30 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
     return () => navigator.geolocation.clearWatch(id)
   }, [])
 
-  // ── Geocode work addresses ──────────────────────────────────────────────
+  // ── Geocode work addresses + task stop addresses ────────────────────────
   useEffect(() => {
     if (!isLoaded || !window.google) return
+
+    const toGeocode = [] // [{ key, address }]
+
+    // Employer addresses
     const employers = [...new Set(todayShifts.map((s) => s.employer))]
-    const toGeocode = employers.filter((key) => {
-      if (geoCache[key]) return false
+    employers.forEach((key) => {
+      if (geoCache[key]) return
       const address = FACILITY_INFO[key]?.address || getCategoryByKey(key)?.address
-      return !!address
+      if (address) toGeocode.push({ key, address })
     })
+
+    // Task stop addresses (keyed as "task:<address>" to avoid collisions)
+    taskStops.forEach((stop) => {
+      const key = `task:${stop.address}`
+      if (!geoCache[key]) toGeocode.push({ key, address: stop.address })
+    })
+
     if (!toGeocode.length) return
 
     const geocoder = new window.google.maps.Geocoder()
-    toGeocode.forEach((key) => {
-      const address = FACILITY_INFO[key]?.address || getCategoryByKey(key)?.address
+    toGeocode.forEach(({ key, address }) => {
       geocoder.geocode({ address }, (results, status) => {
         if (status === 'OK' && results[0]) {
           const loc = results[0].geometry.location
@@ -93,7 +103,7 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
         }
       })
     })
-  }, [isLoaded, todayShifts, getCategoryByKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isLoaded, todayShifts, taskStops, getCategoryByKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Build per-leg directions (one per stop, each in the category's colour) ─
   useEffect(() => {
@@ -108,7 +118,12 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
 
     if (!stops.length) return
 
-    // Build waypoint list: home (no colour) → stop1 → stop2 → …
+    // Task stops as waypoints on the first leg (home → first employer)
+    const taskWaypoints = taskStops
+      .map((stop) => geoCache[`task:${stop.address}`])
+      .filter(Boolean)
+      .map((pos) => ({ location: pos, stopover: true }))
+
     const waypoints = [{ pos: home, cat: null }, ...stops]
     const svc = new window.google.maps.DirectionsService()
 
@@ -116,14 +131,19 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
       const to = waypoints[i + 1]
       return new Promise((resolve) => {
         svc.route(
-          { origin: from.pos, destination: to.pos, travelMode: window.google.maps.TravelMode.DRIVING },
+          {
+            origin:     from.pos,
+            destination: to.pos,
+            travelMode: window.google.maps.TravelMode.DRIVING,
+            ...(i === 0 && taskWaypoints.length ? { waypoints: taskWaypoints } : {}),
+          },
           (result, status) => resolve(status === 'OK' ? { directions: result, color: to.cat?.color ?? '#ffffff' } : null)
         )
       })
     })
 
     Promise.all(requests).then((legs) => setDirectionLegs(legs.filter(Boolean)))
-  }, [isLoaded, home, geoCache, todayShifts, getCategoryByKey])
+  }, [isLoaded, home, geoCache, todayShifts, taskStops, getCategoryByKey])
 
   // ── Work markers (memoised so fitBounds effect can depend on them) ──────
   const workMarkers = useMemo(() =>
@@ -137,18 +157,22 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
     [todayShifts, geoCache, getCategoryByKey]
   )
 
-  // ── Auto-fit bounds to show home + work pins ────────────────────────────
+  // ── Auto-fit bounds to show home + work pins + task stops ───────────────
   useEffect(() => {
     if (!mapRef || !isLoaded || !window.google) return
     const points = []
     if (home) points.push(home)
     workMarkers.forEach(({ pos }) => points.push(pos))
+    taskStops.forEach((stop) => {
+      const pos = geoCache[`task:${stop.address}`]
+      if (pos) points.push(pos)
+    })
     if (points.length < 2) return
 
     const bounds = new window.google.maps.LatLngBounds()
     points.forEach((p) => bounds.extend(p))
     mapRef.fitBounds(bounds, { top: 48, right: 48, bottom: 64, left: 48 })
-  }, [mapRef, home, workMarkers, isLoaded])
+  }, [mapRef, home, workMarkers, geoCache, taskStops, isLoaded])
 
   // ── Set home via GPS ────────────────────────────────────────────────────
   const handleSetHome = useCallback(() => {
@@ -196,6 +220,17 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
       url:        svgUrl(svg),
       scaledSize: new window.google.maps.Size(28, 36),
       anchor:     new window.google.maps.Point(14, 36),
+    }
+  }, [isLoaded])
+
+  // Distinct pin for task stops — small white diamond with a check
+  const taskIcon = useMemo(() => {
+    if (!isLoaded) return null
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="34" viewBox="0 0 28 34"><path d="M14 0C6.27 0 0 6.27 0 14c0 9.33 14 20 14 20S28 23.33 28 14C28 6.27 21.73 0 14 0z" fill="rgba(255,255,255,0.85)"/><path d="M9 13.5l3.5 3.5 6.5-6.5" stroke="#141414" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    return {
+      url:        svgUrl(svg),
+      scaledSize: new window.google.maps.Size(24, 30),
+      anchor:     new window.google.maps.Point(12, 30),
     }
   }, [isLoaded])
 
@@ -291,6 +326,12 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategory
             {workMarkers.map(({ pos, cat }) => {
               const icon = makeWorkIcon(cat.color)
               return icon ? <Marker key={cat.key ?? cat.name} position={pos} icon={icon} zIndex={5} /> : null
+            })}
+            {taskStops.map((stop) => {
+              const pos = geoCache[`task:${stop.address}`]
+              return (pos && taskIcon)
+                ? <Marker key={`task:${stop.address}`} position={pos} icon={taskIcon} title={stop.text} zIndex={8} />
+                : null
             })}
           </GoogleMap>
 

@@ -6,42 +6,86 @@ import { formatTime, subtractMinutes } from '../utils/dateHelpers'
 import { FACILITY_INFO } from '../utils/commuteCalc'
 import CatIcon from './CatIcon'
 
-function TaskRow({ task, onToggle, onRemove }) {
+function TaskRow({ task, onToggle, onRemove, onLocationUpdate }) {
+  const [editingLoc, setEditingLoc] = useState(false)
+  const [locValue, setLocValue]     = useState(task.location ?? '')
+
+  useEffect(() => { setLocValue(task.location ?? '') }, [task.location])
+
+  const saveLocation = () => {
+    setEditingLoc(false)
+    const trimmed = locValue.trim()
+    if (trimmed !== (task.location ?? '')) onLocationUpdate(task.id, trimmed || null)
+  }
+
   const color = '#00A651'
   return (
-    <div className="flex items-center gap-3 py-2.5 group border-b border-white/5 last:border-0">
-      <button
-        onClick={() => onToggle(task.id)}
-        className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200"
-        style={
-          task.completed
-            ? { backgroundColor: color, borderColor: color }
-            : { borderColor: 'rgba(255,255,255,0.25)' }
-        }
-      >
-        {task.completed && (
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5">
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-        )}
-      </button>
+    <div className="border-b border-white/5 last:border-0">
+      <div className="flex items-center gap-3 py-2.5 group">
+        <button
+          onClick={() => onToggle(task.id)}
+          className="flex-shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200"
+          style={task.completed ? { backgroundColor: color, borderColor: color } : { borderColor: 'rgba(255,255,255,0.25)' }}
+        >
+          {task.completed && (
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5">
+              <path d="M20 6L9 17l-5-5" />
+            </svg>
+          )}
+        </button>
 
-      <span
-        className="flex-1 text-sm transition-all duration-300"
-        style={task.completed
-          ? { textDecoration: 'line-through', color: 'rgba(255,255,255,0.25)' }
-          : { color: 'rgba(255,255,255,0.85)' }
-        }
-      >
-        {task.text}
-      </span>
+        <span
+          className="flex-1 text-sm transition-all duration-300"
+          style={task.completed
+            ? { textDecoration: 'line-through', color: 'rgba(255,255,255,0.25)' }
+            : { color: 'rgba(255,255,255,0.85)' }
+          }
+        >
+          {task.text}
+        </span>
 
-      <button
-        onClick={() => onRemove(task.id)}
-        className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-white/25 hover:text-white/60 transition-all text-lg leading-none pb-0.5"
-      >
-        ×
-      </button>
+        <button
+          onClick={() => setEditingLoc((v) => !v)}
+          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all text-sm leading-none w-5 h-5 flex items-center justify-center"
+          style={{ color: task.location ? '#60a5fa' : 'rgba(255,255,255,0.25)' }}
+          title={task.location ? 'Edit location' : 'Add location'}
+        >
+          📍
+        </button>
+
+        <button
+          onClick={() => onRemove(task.id)}
+          className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 text-white/25 hover:text-white/60 transition-all text-lg leading-none pb-0.5"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Location — edit field or badge */}
+      {editingLoc ? (
+        <div className="pl-8 pb-2 pr-1">
+          <input
+            autoFocus
+            type="text"
+            value={locValue}
+            onChange={(e) => setLocValue(e.target.value)}
+            onBlur={saveLocation}
+            onKeyDown={(e) => { if (e.key === 'Enter') saveLocation(); if (e.key === 'Escape') setEditingLoc(false) }}
+            placeholder="Address or place name…"
+            className="w-full rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-white/20 outline-none"
+            style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
+          />
+        </div>
+      ) : task.location ? (
+        <button
+          onClick={() => setEditingLoc(true)}
+          className="pl-8 pb-2 flex items-center gap-1 text-xs hover:text-white/50 transition-colors"
+          style={{ color: 'rgba(96,165,250,0.6)' }}
+        >
+          <span>📍</span>
+          <span>{task.location}</span>
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -51,7 +95,9 @@ export default function ShiftCard({ date, onBack }) {
   const { getCategoryByKey } = useCategories()
   const shifts = getShiftsForDate(date)
   const [activeIdx, setActiveIdx] = useState(0)
-  const [newTask, setNewTask] = useState('')
+  const [newTask, setNewTask]       = useState('')
+  const [newTaskLoc, setNewTaskLoc] = useState('')
+  const [showLocInput, setShowLocInput] = useState(false)
 
   // Hero edit mode
   const [editing, setEditing]     = useState(false)
@@ -70,7 +116,7 @@ export default function ShiftCard({ date, onBack }) {
   const [deleting, setDeleting]           = useState(false)
 
   const shift = shifts[activeIdx] ?? null
-  const { getTasksForShift, addTask, toggleTask, removeTask } = useTasks()
+  const { getTasksForShift, addTask, toggleTask, removeTask, updateTaskLocation } = useTasks()
   const tasks = shift ? getTasksForShift(shift.id) : []
 
   // Sync notes value when the shift changes (realtime updates)
@@ -147,7 +193,12 @@ export default function ShiftCard({ date, onBack }) {
 
   const handleAddTask = (e) => {
     e.preventDefault()
-    if (newTask.trim() && shift) { addTask(shift.id, newTask.trim()); setNewTask('') }
+    if (newTask.trim() && shift) {
+      addTask(shift.id, newTask.trim(), newTaskLoc.trim() || null)
+      setNewTask('')
+      setNewTaskLoc('')
+      setShowLocInput(false)
+    }
   }
 
   const handleRemind = () => {
@@ -354,24 +405,47 @@ export default function ShiftCard({ date, onBack }) {
             <div className="text-white/35 text-[10px] uppercase tracking-widest mb-3">Tasks</div>
             {tasks.length === 0 && <p className="text-white/20 text-sm py-1">No tasks yet</p>}
             {tasks.map((task) => (
-              <TaskRow key={task.id} task={task} onToggle={toggleTask} onRemove={removeTask} />
+              <TaskRow key={task.id} task={task} onToggle={toggleTask} onRemove={removeTask} onLocationUpdate={updateTaskLocation} />
             ))}
-            <form onSubmit={handleAddTask} className="flex gap-2 mt-3">
-              <input
-                type="text"
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Add a task…"
-                className="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:bg-white/8 transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={!newTask.trim()}
-                className="w-10 h-10 rounded-xl text-xl font-bold flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-25 active:scale-95"
-                style={{ backgroundColor: `${color}28`, color }}
-              >
-                +
-              </button>
+            <form onSubmit={handleAddTask} className="flex flex-col gap-2 mt-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTask}
+                  onChange={(e) => setNewTask(e.target.value)}
+                  placeholder="Add a task…"
+                  className="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none focus:bg-white/8 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLocInput((v) => !v)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all active:scale-95 text-sm"
+                  style={{
+                    backgroundColor: showLocInput ? `${color}28` : 'rgba(255,255,255,0.05)',
+                    color: showLocInput ? color : 'rgba(255,255,255,0.3)',
+                  }}
+                  title="Add a location to this task"
+                >
+                  📍
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newTask.trim()}
+                  className="w-10 h-10 rounded-xl text-xl font-bold flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-25 active:scale-95"
+                  style={{ backgroundColor: `${color}28`, color }}
+                >
+                  +
+                </button>
+              </div>
+              {showLocInput && (
+                <input
+                  type="text"
+                  value={newTaskLoc}
+                  onChange={(e) => setNewTaskLoc(e.target.value)}
+                  placeholder="Location (e.g. Kroger on Hwy 31)…"
+                  className="bg-white/5 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/20 outline-none transition-colors"
+                />
+              )}
             </form>
           </div>
 

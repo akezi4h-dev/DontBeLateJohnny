@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './useAuth'
 
 function rowToTask(row) {
-  return { id: row.id, shiftId: row.shift_id, text: row.text, completed: row.completed }
+  return { id: row.id, shiftId: row.shift_id, text: row.text, completed: row.completed, location: row.location ?? null }
 }
 
 const TasksContext = createContext(null)
@@ -70,14 +70,19 @@ export function TasksProvider({ children }) {
 
   // ── Mutations ────────────────────────────────────────────────────────────
 
-  const addTask = useCallback(async (shiftId, text) => {
+  const addTask = useCallback(async (shiftId, text, location = null) => {
     await supabase.from('tasks').insert({
       user_id: user.id,
       shift_id: shiftId,
       text,
       completed: false,
+      ...(location ? { location } : {}),
     })
   }, [user?.id])
+
+  const updateTaskLocation = useCallback(async (id, location) => {
+    await supabase.from('tasks').update({ location: location || null }).eq('id', id)
+  }, [])
 
   const toggleTask = useCallback(async (id) => {
     const task = tasks.find((t) => t.id === id)
@@ -97,6 +102,7 @@ export function TasksProvider({ children }) {
       addTask,
       toggleTask,
       removeTask,
+      updateTaskLocation,
     }}>
       {children}
     </TasksContext.Provider>
