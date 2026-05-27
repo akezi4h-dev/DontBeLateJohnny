@@ -40,8 +40,10 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const [locationValid, setLocationValid] = useState(false) // true only if picked from dropdown
   const [suggestions, setSuggestions]   = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const debounceRef   = useRef(null)
+  const [noResults, setNoResults]       = useState(false)
+  const debounceRef     = useRef(null)
   const locationWrapRef = useRef(null)
+  const sessionTokenRef = useRef(null)
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -57,18 +59,29 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   // Check the actual window object — more reliable than mapsLoaded timing
   const placesReady = () => !!window.google?.maps?.places?.AutocompleteService
 
+  const getSessionToken = () => {
+    if (!window.google?.maps?.places?.AutocompleteSessionToken) return undefined
+    if (!sessionTokenRef.current) {
+      sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken()
+    }
+    return sessionTokenRef.current
+  }
+
   const queryPlaces = useCallback((value) => {
     if (!placesReady() || !value.trim()) return
     const svc = new window.google.maps.places.AutocompleteService()
     svc.getPlacePredictions(
-      { input: value, types: ['establishment', 'geocode'] },
+      { input: value, sessionToken: getSessionToken() },
       (preds, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && preds?.length) {
+        const OK = window.google.maps.places.PlacesServiceStatus.OK
+        if (status === OK && preds?.length) {
           setSuggestions(preds)
+          setNoResults(false)
           setShowSuggestions(true)
         } else {
           setSuggestions([])
-          setShowSuggestions(false)
+          setNoResults(true)
+          setShowSuggestions(true)
         }
       }
     )
@@ -85,6 +98,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const handleLocationChange = (value) => {
     setLocation(value)
     setLocationValid(false)
+    setNoResults(false)
     pendingLocationRef.current = value
     clearTimeout(debounceRef.current)
     if (!value.trim()) { setSuggestions([]); setShowSuggestions(false); return }
@@ -95,7 +109,9 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     setLocation(pred.description)
     setLocationValid(true)
     setSuggestions([])
+    setNoResults(false)
     setShowSuggestions(false)
+    sessionTokenRef.current = null // reset token after selection (billing session complete)
   }
 
   const handleSave = async (e) => {
@@ -400,37 +416,63 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                   />
 
                   {/* Autocomplete dropdown */}
-                  {showSuggestions && suggestions.length > 0 && (
-                    <ul
+                  {showSuggestions && (
+                    <div
                       className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden"
                       style={{ backgroundColor: '#222222', border: '1px solid rgba(255,255,255,0.1)' }}
                     >
-                      {suggestions.map((pred) => (
-                        <li key={pred.place_id}>
-                          <button
-                            type="button"
-                            onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(pred) }}
-                            className="w-full text-left px-4 py-3 text-sm hover:bg-white/8 active:bg-white/12 transition-colors flex items-start gap-2"
-                            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-                          >
-                            <span className="text-white/30 mt-0.5 flex-shrink-0 text-xs">📍</span>
-                            <span>
-                              <span className="text-white/90 font-medium block leading-snug">
-                                {pred.structured_formatting?.main_text ?? pred.description}
-                              </span>
-                              {pred.structured_formatting?.secondary_text && (
-                                <span
-                                  className="text-white/35 text-xs"
-                                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                                >
-                                  {pred.structured_formatting.secondary_text}
+                      {suggestions.length > 0 ? (
+                        <ul>
+                          {suggestions.map((pred, i) => (
+                            <li key={pred.place_id}>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(pred) }}
+                                className="w-full text-left px-4 py-3 text-sm transition-colors flex items-start gap-2"
+                                style={{
+                                  borderBottom: i < suggestions.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.07)' }}
+                                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '' }}
+                              >
+                                <span className="text-white/30 mt-0.5 flex-shrink-0 text-xs">📍</span>
+                                <span>
+                                  <span className="text-white/90 font-medium block leading-snug">
+                                    {pred.structured_formatting?.main_text ?? pred.description}
+                                  </span>
+                                  {pred.structured_formatting?.secondary_text && (
+                                    <span
+                                      className="text-white/35 text-xs"
+                                      style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                                    >
+                                      {pred.structured_formatting.secondary_text}
+                                    </span>
+                                  )}
                                 </span>
-                              )}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : noResults ? (
+                        <div className="px-4 py-3.5 flex items-center gap-2.5">
+                          <span className="text-white/25 text-sm flex-shrink-0">🔍</span>
+                          <div>
+                            <span
+                              className="text-white/50 text-sm block"
+                              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                            >
+                              No locations found
                             </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                            <span
+                              className="text-white/25 text-xs"
+                              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                            >
+                              Try a more specific address or place name
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   )}
                 </div>
 
