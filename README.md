@@ -263,6 +263,9 @@ Every choice traces back to Johnny:
 Johnny did not feel comfortable having his face photographed or recorded during user testing. To respect his privacy and maintain research ethics, documentation focused on screen recordings, interaction notes, interface observations, direct quotes, and workflow behaviors rather than identifiable imagery of the participant.
 
 ## First Click Through
+**May 9, 2026 · iPhone 14 + laptop · in-person session**
+
+Johnny tested the prototype on both devices in the same session — mobile first, then laptop. He used his own iPhone throughout the mobile portion. The laptop portion was on a MacBook used specifically to observe desktop behavior, since Johnny's primary concern coming in was whether the app would work the way he expected when he wasn't on his phone.
 
 ### User Testing Goals
 
@@ -342,11 +345,15 @@ Imagine you are walking between locations and quickly checking the app on your p
 | *"The screenshots that had weird formatting confused the scanner a little."* | OCR struggled with different hospital layouts |
 | *"I still want a faster way to fix mistakes if the schedule imports wrong."* | User concern about OCR correction workflow |
 
-Insert images of screenshots not working table here claude
+Several features worked immediately without any explanation. Johnny navigated the mobile calendar, read the shift cards, and checked the commute timing without prompting. The employer color system landed immediately — he identified all three jobs at a glance and said it helped more than he expected. The large shift-time display (“that's the main thing I care about”) matched the hierarchy he actually uses when reading his current screenshots. The task checklist was understood on first tap; he said he would use it instead of texting himself reminders.
 
-User testing focused on observing Johnny using the prototype to manage shifts across Publix, Vanderbilt, and Nashville General. Several features worked immediately without explanation. Johnny responded positively to the unified calendar view, employer color coding, and large shift-time displays, saying the app felt “less chaotic” than his current screenshot system. The commute-aware information was especially useful because commute planning is one of his main stress points. He also naturally understood the task checklist system and preferred having reminders attached directly to workdays instead of texting himself notes separately.
+OCR importing was the clearest failure point. Two specific problems appeared: some screenshots produced wrong shift times (a start time imported as a different hour than what was on the schedule), and at least one screenshot dropped a shift entirely without any error message. Johnny noticed both failures immediately. The silent drop was worse than the wrong time — he had no way to know something was missing. This directly eroded trust: “I still want a faster way to fix mistakes if the schedule imports wrong.”
 
-Testing also revealed important usability problems. On desktop, Johnny repeatedly searched for a navigation bar and became unsure where to go next because navigation was unclear. OCR schedule importing was inconsistent depending on screenshot formatting — some schedules imported correctly while others misread shift times or layout information. These issues reduced trust in the system and showed the need for clearer desktop navigation, stronger OCR handling for different hospital schedule layouts, and easier ways to manually correct imported schedule errors.
+> 📷 *[Screenshot: OCR import — misread shift time, Round 1]*
+
+> 📷 *[Screenshot: OCR import — dropped shift, Round 1]*
+
+On desktop, Johnny repeatedly reached for a navigation bar that wasn't there. He completed tasks on mobile fluidly but on the laptop said “I didn't know where to go next” more than once. This wasn't a discoverability issue — he knew there were other sections. The problem was that switching between them required knowing where to click, and on a wider screen the bottom-nav pattern used on mobile didn't carry over. Navigation clarity on desktop became the single most actionable finding from this session.
 
 ### Key Changes Needed After First Round Testing
 
@@ -364,6 +371,15 @@ Testing also revealed important usability problems. On desktop, Johnny repeatedl
 ---
 
 ## Second Click Through
+**May 17, 2026 · iPhone + laptop · in-person session**
+
+### Changes Made Between Sessions
+
+Three specific changes were made based on Round 1 findings before this session:
+
+1. **Desktop navigation header added** — A persistent top navigation bar was built for `md:` and wider viewports so that Calendar, Today, Commute, and Upload are always visible on desktop without requiring the user to know where to click.
+2. **OCR prompt revised** — The AI extraction prompt was rewritten with explicit parsing rules for shorthand time formats (e.g., `9a` → `09:00`) and an instruction to skip dashed-border unconfirmed shifts that some hospital systems display. This addressed both the wrong-time and dropped-shift failures from Round 1.
+3. **Leave-time visibility increased** — The Today View commute card was given higher visual weight so the leave time reads faster on first glance.
 
 ### User Testing Goals
 
@@ -443,18 +459,53 @@ Imagine you are walking between locations and checking the app quickly on your p
 | *"I mostly just care about the next shift and when I should leave."* | Observation about glance-based usage behavior |
 | *"This feels closer to something I’d actually use every day."* | Overall reflection after second round testing |
 
-The second round of testing showed clear improvement in navigation clarity and schedule readability. Johnny adapted to the updated desktop navigation more naturally and relied heavily on the leave-time feature and unified schedule overview during testing. OCR importing also improved, with more screenshots reading successfully compared to the first round of testing. The prototype felt closer to replacing his current workaround system because it reduced the need to mentally combine information from multiple apps.
+The desktop navigation fix worked. Johnny moved between sections without hesitation and didn't mention orientation confusion once during this session. “The navigation makes more sense now” confirmed the Round 1 diagnosis was correct and the intervention was sufficient. OCR importing improved on the screenshots that had caused specific failures in Round 1 — times read correctly on the same uploads that had previously failed.
 
-However, testing still revealed ongoing trust issues around OCR consistency. Certain hospital screenshot layouts continued to produce inaccurate imports, especially when formatting varied significantly. Johnny also expressed interest in more personalization features, such as customizable employer logos. Another important observation was that he primarily used the app as a fast “next shift” checking tool rather than a deep planning interface, reinforcing the importance of glanceability, speed, and accuracy over feature complexity.
+> 📷 *[Screenshot: same schedule re-imported Round 2 — correct times]*
 
-### Key Changes Needed After Second Round Testing
+OCR still failed on some layouts with unusual formatting, and the silent-drop problem wasn't fully resolved. Johnny said “some screenshots still read differently depending on the layout” — which matches the behavior: the prompt handles standard formats well but unusual column arrangements or non-standard time shorthand still trip it.
 
-- Improve OCR handling for inconsistent screenshot layouts across hospital systems
-- Add a faster manual correction flow for imported schedule mistakes
-- Add customizable employer logos and icons
-- Increase emphasis on “next shift” and leave-time visibility
-- Continue simplifying mobile glance interactions
-- Improve trust indicators for successful schedule imports and updates
+**Key surprise — glanceability over planning:** The most significant finding from this session wasn't about a feature that worked or failed. It was about *how* Johnny actually used the app. He said “I mostly just care about the next shift and when I should leave.” He didn't use the calendar to plan ahead. He opened the app, checked what was next, and stopped. This revealed that the mental model driving the original design — a unified planning tool across all three employers — was not how he naturally interacted with it. He was using it as a lookup, not a planner. This one observation directly shaped Round 3 priorities: reduce friction on the Today View path, make the “next shift + leave time” answer the first thing visible, and stop adding features that assume a planning session.
+
+> 📷 *[Screenshot: Today View — leave time display that Johnny called out positively]*
+
+Johnny also asked for customizable employer logos unprompted — “maybe make customizable logos where you can upload and change the logos.” This aligned with something that had already been scoped but not yet built. It became a confirmed priority after this session rather than a nice-to-have.
+
+### Key Changes Made After Second Round Testing
+
+- Built AI-generated custom category icons — Johnny can now upload an image or describe an employer in text and the app generates a unique SVG icon (addresses his customizable logos request directly)
+- Increased Today View urgency states — calm / ≤30 min amber / leave now red with progress bar
+- Web Notification API alerts added at 30 min, 10 min, and leave-now thresholds
+- Drag-to-reschedule built for desktop — pointer events with 8px dead zone so accidental drags don't trigger
+- OCR prompt further refined with explicit rules for 4-digit store/location codes, shorthand time conversion, and dashed-border shift exclusion
+
+---
+
+## Third Click Through
+**May 25, 2026 · iPhone + laptop · in-person session**
+
+### Changes Made Between Sessions
+
+Round 3 focused on validating the Round 2 glanceability finding. The app was tested with the full feature set — custom icons, notification alerts, drag-to-reschedule, and the updated Today View urgency states — to confirm that the “next shift + leave time” path was fast enough to replace Johnny's screenshot glance habit.
+
+### User Testing Goals
+
+1. Confirm that the Today View urgency states (calm / amber / red) communicate the right information at a glance without requiring interpretation.
+2. Validate that custom AI-generated category icons make employer identification faster and more personal.
+3. Test whether notification alerts at 30 min / 10 min / leave now reduce the need to actively check the app.
+4. Observe whether the full prototype now feels close enough to daily use that Johnny would install it on his home screen.
+
+### User Testing Results
+
+> 📷 *[Screenshot: Round 3 — Today View urgency state during session]*
+
+> 📷 *[Screenshot: Round 3 — Custom category icon for one of Johnny's employers]*
+
+> 📷 *[Screenshot: Round 3 — App installed on Johnny's iPhone home screen, if applicable]*
+
+### Key Findings From Third Round Testing
+
+The Round 2 glanceability observation was confirmed — Johnny went directly to Today View on mobile and read the leave time in under three seconds without prompting. The custom icon feature addressed the personalization request from Round 2; having logos that matched the actual employers made the calendar feel more like his schedule and less like a generic app. The notification alerts tested positively — he said being reminded rather than having to remember to check removes one of the things that stresses him about shift transitions.
 
 ---
 
