@@ -455,3 +455,45 @@ However, testing still revealed ongoing trust issues around OCR consistency. Cer
 - Increase emphasis on “next shift” and leave-time visibility
 - Continue simplifying mobile glance interactions
 - Improve trust indicators for successful schedule imports and updates
+
+---
+
+# Section 12 : App Architecture & User Flow
+
+```mermaid
+flowchart TD
+    AUTH([Supabase Auth\nEmail login]) --> A
+
+    A([Johnny opens DontBeLateJohnny]) --> B{Choose action}
+
+    B --> C[📅 Month View]
+    B --> D[📸 Upload Schedule]
+    B --> E[✍️ Add Shift Manually]
+    B --> F[🚗 Commute View]
+    B --> G[📋 Today View]
+
+    D --> D1[Select · Paste ⌘V · Drag screenshot]
+    D1 --> D2[Canvas API\nCompress + convert to JPEG]
+    D2 --> D3[Anthropic API\nclaude-haiku-4-5\nExtract shift times from image]
+    D3 --> D4{Shifts\ndetected?}
+    D4 -->|Yes| D5[Review & confirm shifts]
+    D4 -->|No alert| D1
+    D5 --> DB
+
+    E --> E1[Date · Start time · End time · Notes]
+    E1 --> E2[Google Places API\nLocation autocomplete]
+    E2 --> DB
+
+    C --> C1[Tap a date]
+    C1 --> C2[Shift Card\nTime · Employer color · Location]
+    C2 --> C3[Add or check off tasks]
+    C3 --> DB
+
+    F --> F1[commuteCalc\nLeave-time estimate]
+    F1 --> F2[Next shift · Drive time · Depart by time]
+
+    G --> G1[Today's shifts\nat a glance]
+
+    DB[(Supabase\nPostgres)] --> SYNC[Realtime sync\nacross all devices]
+    SYNC --> C
+```
