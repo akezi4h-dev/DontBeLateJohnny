@@ -87,6 +87,10 @@ export default function CommuteView() {
   const dates       = getUpcomingDates(14)
   const todayShifts = getShiftsForDate(today)
 
+  const [selectedDate, setSelectedDate] = useState(today)
+  const selectedShifts  = getShiftsForDate(selectedDate)
+  const selectedLabel   = formatDayLabel(selectedDate, selectedDate === today)
+
   // Push notifications: 30 min, 10 min, and "leave now" alerts
   useCommuteAlerts(todayShifts, getCategoryByKey)
 
@@ -122,7 +126,7 @@ export default function CommuteView() {
       {/* ── Map ────────────────────────────────────────────────────────────── */}
       <MapErrorBoundary>
         <Suspense fallback={MAP_FALLBACK}>
-          <CommuteMap todayShifts={todayShifts} getCategoryByKey={getCategoryByKey} />
+          <CommuteMap shifts={selectedShifts} dateLabel={selectedLabel} getCategoryByKey={getCategoryByKey} />
         </Suspense>
       </MapErrorBoundary>
 
@@ -147,15 +151,20 @@ export default function CommuteView() {
           const dayLabel = formatDayLabel(date, isToday)
           const dateSub  = formatDateSub(date)
 
+          const isSelected = selectedDate === date
+
           return (
             <div key={date}>
-              {/* Day label */}
-              <div className="flex items-baseline gap-2 mb-2 px-1">
+              {/* Day label — tap to show this day's route on the map */}
+              <button
+                onClick={() => setSelectedDate(date)}
+                className="flex items-baseline gap-2 mb-2 px-1 w-full text-left active:opacity-70 transition-opacity"
+              >
                 <span
                   className="text-sm font-bold"
                   style={{
                     fontFamily: "'Syne', sans-serif",
-                    color: isToday ? '#ffffff' : 'rgba(255,255,255,0.55)',
+                    color: isSelected ? '#ffffff' : isToday ? '#ffffff' : 'rgba(255,255,255,0.55)',
                   }}
                 >
                   {dayLabel}
@@ -166,7 +175,15 @@ export default function CommuteView() {
                 >
                   {dateSub}
                 </span>
-              </div>
+                {isSelected && (
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest ml-1"
+                    style={{ color: 'rgba(255,255,255,0.3)', fontFamily: "'Space Grotesk', sans-serif" }}
+                  >
+                    · route shown
+                  </span>
+                )}
+              </button>
 
               {/* Shift rows for this day */}
               <div className="flex flex-col gap-2">

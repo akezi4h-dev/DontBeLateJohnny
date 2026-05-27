@@ -37,7 +37,7 @@ function svgUrl(svg) {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-export default function CommuteMap({ todayShifts, getCategoryByKey }) {
+export default function CommuteMap({ shifts: todayShifts, dateLabel, getCategoryByKey }) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -247,7 +247,7 @@ export default function CommuteMap({ todayShifts, getCategoryByKey }) {
             className="text-xs font-bold uppercase tracking-widest"
             style={{ color: 'rgba(255,255,255,0.4)', fontFamily: "'Space Grotesk', sans-serif" }}
           >
-            Today's Route
+            {dateLabel ? `${dateLabel}'s Route` : "Today's Route"}
           </span>
           {!home && (
             <span className="text-[10px] text-white/25 font-normal">— set home to see route</span>
