@@ -67,13 +67,13 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
     return () => navigator.geolocation.clearWatch(id)
   }, [])
 
-  // ── Geocode work addresses + task stop addresses ────────────────────────
+  // ── Geocode work addresses, custom shift locations, task stops ──────────
   useEffect(() => {
     if (!isLoaded || !window.google) return
 
     const toGeocode = [] // [{ key, address }]
 
-    // Employer addresses
+    // Employer default addresses
     const employers = [...new Set(todayShifts.map((s) => s.employer))]
     employers.forEach((key) => {
       if (geoCache[key]) return
@@ -81,7 +81,14 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
       if (address) toGeocode.push({ key, address })
     })
 
-    // Task stop addresses (keyed as "task:<address>" to avoid collisions)
+    // Custom per-shift locations (keyed as "shift-loc:<address>")
+    todayShifts.forEach((shift) => {
+      if (!shift.location) return
+      const key = `shift-loc:${shift.location}`
+      if (!geoCache[key]) toGeocode.push({ key, address: shift.location })
+    })
+
+    // Task stop addresses (keyed as "task:<address>")
     taskStops.forEach((stop) => {
       const key = `task:${stop.address}`
       if (!geoCache[key]) toGeocode.push({ key, address: stop.address })
@@ -111,8 +118,15 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
       return
     }
 
-    const stops = [...new Set(todayShifts.map((s) => s.employer))]
-      .map((key) => ({ pos: geoCache[key], cat: getCategoryByKey(key) }))
+    // For each unique employer, prefer a custom shift location if one was geocoded
+    const stops = [...new Map(todayShifts.map((s) => [s.employer, s])).values()]
+      .map((shift) => {
+        const cat = getCategoryByKey(shift.employer)
+        const pos = (shift.location && geoCache[`shift-loc:${shift.location}`])
+          ? geoCache[`shift-loc:${shift.location}`]
+          : geoCache[shift.employer]
+        return { pos, cat }
+      })
       .filter((s) => s.pos)
 
     if (!stops.length) return
@@ -149,7 +163,9 @@ export default function CommuteMap({ shifts: todayShifts, dateLabel, taskStops =
     [...new Map(todayShifts.map((s) => [s.employer, s])).values()]
       .map((shift) => {
         const cat = getCategoryByKey(shift.employer)
-        const pos = geoCache[shift.employer]
+        const pos = (shift.location && geoCache[`shift-loc:${shift.location}`])
+          ? geoCache[`shift-loc:${shift.location}`]
+          : geoCache[shift.employer]
         return pos ? { pos, cat } : null
       })
       .filter(Boolean),

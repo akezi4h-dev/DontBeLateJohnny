@@ -3,6 +3,7 @@ import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { supabase } from '../lib/supabase'
 import { formatTime } from '../utils/dateHelpers'
+import { FACILITY_INFO } from '../utils/commuteCalc'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
@@ -21,6 +22,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const [startTime, setStartTime] = useState('07:00')
   const [endTime, setEndTime]     = useState('15:00')
   const [notes, setNotes]         = useState('')
+  const [location, setLocation]   = useState('')
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
 
@@ -29,7 +31,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
     if (!date) return setError('Date is required')
     setSaving(true)
     try {
-      await addShift({ employer, date, startTime, endTime, notes, source: 'manual' })
+      await addShift({ employer, date, startTime, endTime, notes, location: location.trim() || null, source: 'manual' })
       onSuccess?.()
       onBack()
     } catch (err) {
@@ -291,6 +293,31 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                     style={{ colorScheme: 'dark' }}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label
+                  className="text-white/35 text-[10px] uppercase tracking-widest block mb-2"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  Location
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm select-none">📍</span>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder={FACILITY_INFO[employer]?.address || 'Address or place name — used for commute map'}
+                    className="w-full bg-[#1a1a1a] rounded-xl pl-9 pr-4 py-3.5 text-white placeholder-white/20 outline-none focus:ring-1 focus:ring-white/20 transition-all text-sm"
+                  />
+                </div>
+                <p
+                  className="text-white/25 text-[10px] mt-1.5 px-1"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                >
+                  Leave blank to use the default address for this category.
+                </p>
               </div>
 
               <div>

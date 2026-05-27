@@ -25,6 +25,7 @@ function rowToShift(row) {
     endTime:   row.end_time.slice(0, 5),
     notes:     row.notes || '',
     source:    row.source ?? 'manual',
+    location:  row.location || null,
   }
 }
 
@@ -81,6 +82,7 @@ export function ShiftsProvider({ children }) {
         end_time:   data.endTime,
         notes:      data.notes || '',
         source:     data.source ?? 'manual',
+        location:   data.location || null,
       })
       .select()
       .single()
@@ -97,6 +99,7 @@ export function ShiftsProvider({ children }) {
         start_time: data.startTime,
         end_time:   data.endTime,
         notes:      data.notes ?? '',
+        location:   data.location ?? null,
       })
       .eq('id', id)
       .select()
