@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { useJsApiLoader } from '@react-google-maps/api'
 import { useShifts } from '../hooks/useShifts'
 import { useCategories } from '../hooks/useCategories'
 import { supabase } from '../lib/supabase'
@@ -7,9 +8,18 @@ import { FACILITY_INFO } from '../utils/commuteCalc'
 import CategoryEditor from './CategoryEditor'
 import CatIcon from './CatIcon'
 
+const MAPS_LIBRARIES = ['places']
+
 export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory }) {
   const { addShift } = useShifts()
   const { categories, getCategoryByKey, createCategory, updateCategory } = useCategories()
+
+  // ── Google Maps Places (for location autocomplete) ────────────────────────
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const { isLoaded: mapsLoaded } = useJsApiLoader({
+    googleMapsApiKey: apiKey ?? '',
+    libraries: MAPS_LIBRARIES,
+  })
 
   // ── Shared ────────────────────────────────────────────────────────────────
   const [mode, setMode]       = useState('manual') // 'manual' | 'screenshot'
@@ -22,13 +32,70 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
   const [startTime, setStartTime] = useState('07:00')
   const [endTime, setEndTime]     = useState('15:00')
   const [notes, setNotes]         = useState('')
-  const [location, setLocation]   = useState('')
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
+
+  // ── Location autocomplete ─────────────────────────────────────────────────
+  const [location, setLocation]         = useState('')
+  const [locationValid, setLocationValid] = useState(false) // true only if picked from dropdown
+  const [suggestions, setSuggestions]   = useState([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const debounceRef   = useRef(null)
+  const locationWrapRef = useRef(null)
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const onMouseDown = (e) => {
+      if (locationWrapRef.current && !locationWrapRef.current.contains(e.target)) {
+        setShowSuggestions(false)
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
+  }, [])
+
+  const queryPlaces = useCallback((value) => {
+    if (!mapsLoaded || !window.google || !value.trim()) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+    const svc = new window.google.maps.places.AutocompleteService()
+    svc.getPlacePredictions(
+      { input: value, types: ['establishment', 'geocode'] },
+      (preds, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && preds?.length) {
+          setSuggestions(preds)
+          setShowSuggestions(true)
+        } else {
+          setSuggestions([])
+          setShowSuggestions(false)
+        }
+      }
+    )
+  }, [mapsLoaded])
+
+  const handleLocationChange = (value) => {
+    setLocation(value)
+    setLocationValid(false)
+    clearTimeout(debounceRef.current)
+    if (!value.trim()) { setSuggestions([]); setShowSuggestions(false); return }
+    debounceRef.current = setTimeout(() => queryPlaces(value), 300)
+  }
+
+  const handleSelectSuggestion = (pred) => {
+    setLocation(pred.description)
+    setLocationValid(true)
+    setSuggestions([])
+    setShowSuggestions(false)
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
     if (!date) return setError('Date is required')
+    if (location.trim() && !locationValid) {
+      return setError('Please select a location from the suggestions, or clear the field to use the default.')
+    }
     setSaving(true)
     try {
       await addShift({ employer, date, startTime, endTime, notes, location: location.trim() || null, source: 'manual' })
@@ -295,7 +362,7 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                 </div>
               </div>
 
-              <div>
+              <div ref={locationWrapRef}>
                 <label
                   className="text-white/35 text-[10px] uppercase tracking-widest block mb-2"
                   style={{ fontFamily: "'Space Grotesk', sans-serif" }}
@@ -303,21 +370,72 @@ export default function AddShift({ onBack, defaultDate, onSuccess, onNewCategory
                   Location
                 </label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm select-none">📍</span>
+                  {/* Pin icon / valid check */}
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm select-none pointer-events-none">
+                    {locationValid ? '✅' : '📍'}
+                  </span>
                   <input
                     type="text"
                     value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder={FACILITY_INFO[employer]?.address || 'Address or place name — used for commute map'}
-                    className="w-full bg-[#1a1a1a] rounded-xl pl-9 pr-4 py-3.5 text-white placeholder-white/20 outline-none focus:ring-1 focus:ring-white/20 transition-all text-sm"
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    onFocus={() => { if (suggestions.length) setShowSuggestions(true) }}
+                    placeholder={FACILITY_INFO[employer]?.address || 'Search for an address or place…'}
+                    className="w-full rounded-xl pl-9 pr-4 py-3.5 text-white placeholder-white/20 outline-none transition-all text-sm"
+                    style={{
+                      backgroundColor: '#1a1a1a',
+                      boxShadow: location.trim() && !locationValid
+                        ? '0 0 0 1px rgba(239,68,68,0.5)'
+                        : locationValid
+                          ? '0 0 0 1px rgba(74,222,128,0.4)'
+                          : '0 0 0 1px rgba(255,255,255,0.08)',
+                    }}
                   />
+
+                  {/* Autocomplete dropdown */}
+                  {showSuggestions && suggestions.length > 0 && (
+                    <ul
+                      className="absolute z-50 left-0 right-0 mt-1 rounded-xl overflow-hidden"
+                      style={{ backgroundColor: '#222222', border: '1px solid rgba(255,255,255,0.1)' }}
+                    >
+                      {suggestions.map((pred) => (
+                        <li key={pred.place_id}>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => { e.preventDefault(); handleSelectSuggestion(pred) }}
+                            className="w-full text-left px-4 py-3 text-sm hover:bg-white/8 active:bg-white/12 transition-colors flex items-start gap-2"
+                            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                          >
+                            <span className="text-white/30 mt-0.5 flex-shrink-0 text-xs">📍</span>
+                            <span>
+                              <span className="text-white/90 font-medium block leading-snug">
+                                {pred.structured_formatting?.main_text ?? pred.description}
+                              </span>
+                              {pred.structured_formatting?.secondary_text && (
+                                <span
+                                  className="text-white/35 text-xs"
+                                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
+                                >
+                                  {pred.structured_formatting.secondary_text}
+                                </span>
+                              )}
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <p
-                  className="text-white/25 text-[10px] mt-1.5 px-1"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-                >
-                  Leave blank to use the default address for this category.
-                </p>
+
+                {/* Hint / error state */}
+                {location.trim() && !locationValid ? (
+                  <p className="text-red-400/80 text-[10px] mt-1.5 px-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    Select a result from the list — unrecognised locations won't appear on the map.
+                  </p>
+                ) : (
+                  <p className="text-white/25 text-[10px] mt-1.5 px-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                    {locationValid ? `✓ Location confirmed` : 'Leave blank to use the default address for this category.'}
+                  </p>
+                )}
               </div>
 
               <div>
