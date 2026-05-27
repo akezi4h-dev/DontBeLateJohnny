@@ -248,6 +248,22 @@ One line in the right place: `const todayStr = toISODate(today.getFullYear(), to
 
 ---
 
+## Entry 17 — AI Gated on React State Instead of the Actual API Object
+
+**What AI gave me:**
+The location autocomplete `queryPlaces` function was gated with `if (!mapsLoaded || !window.google)` — using `mapsLoaded`, a React state boolean set by `useJsApiLoader`, as the guard for whether the Places API was ready to use.
+
+**Why I rejected it:**
+The dropdown didn't appear. Typed "RIGDID", got the red ring (invalid state), no suggestions. `mapsLoaded` is an async React state value — it is `false` until the `useJsApiLoader` hook resolves, which happens on the next render after the script loads. The user typed before that render cycle completed, the guard returned early, and no query was made. The fundamental problem: using a React state snapshot as a proxy for `window.google` availability conflates two different things — the JS object being present on `window` (synchronous, happens when the script executes) and a React state flag being `true` (async, happens one render after).
+
+**What was done instead:**
+Replaced the `mapsLoaded` guard with `window.google?.maps?.places?.AutocompleteService` — the actual constructor, checked at call time. Added `pendingLocationRef` to track whatever the user last typed; a `useEffect` watching `mapsLoaded` replays the query when the API finishes loading so text typed before the API was ready still produces results.
+
+**Why it's better:**
+Reading `window.google.maps.places.AutocompleteService` is the ground truth — either the constructor exists or it doesn't. No React render cycle required. The retry effect means the UI is forgiving regardless of network speed: type immediately, see the dropdown appear the moment the API is ready, no manual re-type needed.
+
+---
+
 ## Entry 15 — AI's "Fix" Introduced a Different Syntax Error
 
 **What AI gave me:**

@@ -533,3 +533,44 @@ Four files changed across three layers:
 Accepted. The `shift-loc:` prefix avoids collisions with the existing `employer` keys and the `task:` prefix already in use. The fallback chain (custom location → employer default) means all existing shifts continue to work without any data migration. Storing the location as a free-text address rather than pre-geocoded coordinates is consistent with how task locations are handled — frictionless input, lazy geocoding on first map load.
 
 ---
+
+## Entry 36 — Google Places Autocomplete on Location Field
+
+**Asked:**
+Screenshot showing a plain text input with "ghg" typed and no dropdown. "Use logic and a dropdown and make sure location is real, and also make sure that if the location doesn't exist then put an error statement"
+
+**Produced:**
+Replaced the bare text input with a full Places Autocomplete flow:
+
+- `useJsApiLoader` with `libraries: ['places']` added to `AddShift` to ensure the Maps API and Places library are available even when `CommuteMap` hasn't been loaded yet.
+- `AutocompleteService.getPlacePredictions()` called on a 300ms debounce as the user types, with `types: ['establishment', 'geocode']`.
+- Results rendered as a custom dropdown (`<ul>`) overlaid below the input using absolute positioning and `z-50`. Each row splits `structured_formatting.main_text` (bold place name) from `structured_formatting.secondary_text` (city, state) for clean two-line display.
+- `locationValid` boolean tracks whether the current text was picked from the dropdown. Any subsequent typing sets it back to `false`.
+- Input ring color: neutral default → red when text present but not validated → green when confirmed.
+- Pin icon swaps to ✅ on validation. Helper text below reads "✓ Location confirmed" when valid, inline red warning when invalid, default hint when blank.
+- `handleSave` blocks if `location.trim()` is non-empty and `locationValid` is false, returning an error message.
+- Outside-click closes the dropdown via a `mousedown` listener on `document`; `onMouseDown` on list items uses `e.preventDefault()` to prevent the input's blur from firing before the click registers.
+
+**Decided:**
+Accepted. Free-text entry was the original implementation and had no safeguard against typos or non-existent addresses — both would silently produce failed geocode calls on the commute map with no feedback to the user. The autocomplete enforces that only geocodable addresses are saved, and the visual state (ring color, pin icon, helper text) communicates the validation status without a separate error step.
+
+---
+
+## Entry 37 — Autocomplete Dropdown Timing Fix
+
+**Asked:**
+Screenshot showing the red ring (invalid state) with "RIGDID" typed, but no dropdown visible. "DROPDOWN NOT SHOWING UP"
+
+**Produced:**
+Identified the root cause: `queryPlaces` was gated on `mapsLoaded` being `true`, but `mapsLoaded` is an async React state value that lags behind the actual script load. When the user types before the Maps API finishes initialising, `mapsLoaded` is still `false` and the function returns early without making the API call or showing suggestions.
+
+Two fixes:
+
+1. **Direct window check**: Replaced the `mapsLoaded` guard with `window.google?.maps?.places?.AutocompleteService` — the actual constructor object, read at call time. This is synchronous and accurate; `mapsLoaded` can be `false` while `window.google` is already populated.
+
+2. **Re-fire on load**: Added `pendingLocationRef` to track the last typed value. A `useEffect` watching `mapsLoaded` calls `queryPlaces(pendingLocationRef.current)` when the API finishes loading — so any text typed before the API was ready automatically triggers a query the moment it becomes available.
+
+**Decided:**
+Accepted. Using a React state flag as a proxy for `window.google` availability is a category of async timing bug that appears frequently with external scripts. The correct pattern is to read the actual object (`window.google.maps.places`) at the moment of the call, not a React state snapshot from some earlier render. The `pendingLocationRef` retry makes the UX forgiving: the user can type immediately after opening Add Shift and the dropdown appears as soon as the Maps API loads, with no manual re-type required.
+
+---
