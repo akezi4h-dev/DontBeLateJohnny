@@ -458,6 +458,102 @@ However, testing still revealed ongoing trust issues around OCR consistency. Cer
 
 ---
 
+## Third Click Through
+
+### User Testing Goals
+
+1. Test how the OCR system handles screenshots with inconsistent wording and formatting.
+2. Evaluate whether visual hierarchy improvements help Johnny distinguish between past and upcoming shifts.
+3. Observe whether the prototype feels reliable enough for repeated daily use.
+4. Identify remaining trust issues involving imported schedules and missing shift data.
+5. Measure whether the app continues reducing mental effort compared to Johnny’s current workaround system.
+
+### Task 1 OCR Accuracy Test
+
+**Prompt**  
+Upload schedule screenshots from different hospital systems and review which shifts were imported into the calendar.
+
+**Questions**
+1. Did all expected shifts appear after importing?
+2. Was it easy to notice when something was missing?
+3. Did the imported schedule feel more reliable this time?
+4. What would help you trust the importing process more?
+
+### Task 2 Past vs Upcoming Schedule Test
+
+**Prompt**  
+Review your schedule for the current month and explain the difference between completed shifts and upcoming shifts.
+
+**Questions**
+1. Was it easy to tell which shifts already passed?
+2. Would fading past dates make the calendar easier to read?
+3. Did upcoming shifts stand out clearly enough?
+4. Was there any part of the calendar that still felt visually overwhelming?
+
+### Task 3 Quick Daily Use Test
+
+**Prompt**  
+Open the app like you normally would before work and explain what information matters most to you.
+
+**Questions**
+1. What information did you look for first?
+2. Did the app feel faster to understand compared to earlier versions?
+3. What feature do you rely on the most now?
+4. Does this feel close to something you would realistically use every day?
+
+### Task 4 Trust & Reliability Test
+
+**Prompt**  
+Review a schedule import that contains missing or incorrectly labeled shifts.
+
+**Questions**
+1. How would you expect the app to handle missing shifts?
+2. Would you notice if something failed to import?
+3. How important is accuracy compared to speed?
+4. What would make the app feel dependable enough to trust fully?
+
+### Task 5 Overall Workflow Reflection
+
+**Prompt**  
+Compare this version of the prototype to your original screenshot-and-sticker workflow.
+
+**Questions**
+1. Does this reduce the amount of manual work you normally do?
+2. Is there anything from your old workflow you still miss?
+3. What still feels frustrating?
+4. What feels most improved from the first version?
+
+### User Testing Results
+
+| Quote | Context |
+|---|---|
+| *"When the word doesn’t exactly say shift it doesn’t get added."* | OCR struggled with inconsistent schedule wording |
+| *"He wants past dates to be faded."* | Suggestion for improving calendar readability |
+| *"Happy with it but needs improvement."* | Overall reaction after third round testing |
+| *"I mostly just check the next thing coming up."* | Continued glance-based usage behavior |
+| *"The imports work better now but I still double check them."* | Improved OCR trust but continued verification behavior |
+| *"Fading old shifts would make the calendar easier to scan."* | Feedback on visual hierarchy improvements |
+| *"I like that I don’t have to edit screenshots anymore."* | Positive reaction to reducing manual workflow |
+| *"I notice missing shifts faster now."* | Improvement in import visibility and awareness |
+| *"I care more about accuracy than extra features."* | Prioritization of reliability over complexity |
+| *"This feels way more organized than what I was doing before."* | Overall reaction to workflow improvements |
+
+The third round of testing focused heavily on OCR reliability, visual clarity, and long-term usability. Johnny successfully used the app to review schedules, check upcoming shifts, and compare imported screenshots against calendar results. The testing confirmed that the prototype continued reducing the need for manual screenshots and schedule editing. Visual organization improvements also helped Johnny scan upcoming shifts more quickly.
+
+However, testing revealed continued OCR limitations when schedule screenshots used inconsistent wording. If a screenshot did not explicitly contain the word “shift,” some events failed to import correctly. Johnny also requested visual fading for past dates to better separate completed shifts from upcoming ones. While overall satisfaction with the prototype increased, trust in schedule accuracy remained the most important issue affecting full adoption.
+
+### Key Changes Needed After Third Round Testing
+
+- Improve OCR recognition for inconsistent wording and schedule terminology
+- Add fallback detection for schedules that do not explicitly contain the word “shift”
+- Fade past dates and completed shifts for clearer visual hierarchy
+- Improve visibility of missing or failed imports
+- Continue prioritizing speed, readability, and glanceability over feature complexity
+- Add stronger confirmation states after successful schedule importing
+- Improve trust and reliability before expanding additional features
+
+---
+
 # Section 12 : App Architecture & User Flow
 
 ```mermaid
