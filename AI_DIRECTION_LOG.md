@@ -39,7 +39,13 @@ Confirmed the stack specified in the PRD: React + Vite + Tailwind CSS + PWA mani
 AI scaffolded the full project structure: `package.json`, `vite.config.js`, `tailwind.config.js`, `postcss.config.js`, `index.html`, `src/` tree, `public/manifest.json`, `public/sw.js`, SVG icons, and GitHub Actions deploy workflow. Build succeeded on first attempt.
 
 **Decided:**
-Accepted the scaffold as-is. The base path `/DontBeLateJohnny/` was correctly derived from the repo name. The font pairing (Syne for display, Space Grotesk for body) and employer color hex values (#00A651 Publix green, #CFB87C Vanderbilt gold, #2D6DB5 Nashville General blue) were pulled directly from the PRD without drift. No invented features were added.
+Accepted the scaffold as-is. Every stack choice served a specific requirement from the PRD rather than a default preference. React with Vite was the right call over Next.js — this is a client-side personal tool with no server rendering needs, and Vite's build output is a static bundle that GitHub Pages can serve directly. Next.js would have introduced a Node.js runtime dependency, dynamic routing, and deployment complexity that add nothing for a single-user app with five predictable screens.
+
+Tailwind CSS was chosen over CSS modules or styled-components because the design system in the PRD is color-first — three employer colors dominate every UI decision. Tailwind's utility-first approach makes inline color application (`text-[#00A651]`, `bg-[#CFB87C]40`) faster to iterate than defining named classes per component. Speed of iteration matters for a product being built against a first-contact session deadline.
+
+The font pairing was specified in the PRD and AI reproduced it exactly: Syne for all display text (numbers, shift times, hero labels) because its ultra-bold weight at large sizes creates clear visual hierarchy when glancing at a screen, and Space Grotesk for metadata (employer names, facility addresses, status labels) because it reads cleanly at small sizes without losing legibility. An AI with no constraint would have defaulted to Inter or Roboto — generic legible fonts that don't carry the visual weight the time-display cards require.
+
+The employer color hex values (#00A651 Publix green, #CFB87C Vanderbilt gold, #2D6DB5 Nashville General blue) were pulled directly from brand documentation in the PRD. These are not approximations — each hex value reflects the actual employer brand. This matters for Johnny's recognition speed: he glances at a colored dot on the calendar and recognizes the employer without reading the name. If AI had generated approximate greens and golds, the recognition signal would be weaker. No invented features were added — every file created corresponded to a PRD requirement. The base path `/DontBeLateJohnny/` was correctly derived from the repo name automatically, which confirmed AI had read the deployment context of the PRD correctly rather than scaffolding a generic project.
 
 ---
 
@@ -65,7 +71,9 @@ Reported the site wasn't working after GitHub Actions ran green.
 AI ran a curl check, confirmed 404, fetched the gh-pages branch to verify the build landed correctly, then identified the problem: Pages was not configured to serve from the `gh-pages` branch. Directed to Settings → Pages and provided the exact URL `github.com/akezi4h-dev/DontBeLateJohnny/settings/pages`.
 
 **Decided:**
-Followed the diagnosis. The key editorial judgment was not assuming the code was broken — AI correctly distinguished between a deployment problem (Pages source config) and a build problem (bad code). That distinction saved time that would have been spent debugging correct code.
+Followed the diagnosis. The key editorial judgment was understanding which layer to debug first. When a GitHub Actions run shows green but the live site doesn't load, there are exactly three places the failure can be: (1) the build produced bad output, (2) the output was deployed to the wrong place, or (3) GitHub Pages isn't pointed at where the output landed. The Actions job was green — `npm run build` ran without error and the artifact was uploaded. That ruled out option 1. The `gh-pages` branch existed and had the built files. That ruled out option 2. The only remaining cause was option 3: Pages source configuration in repository settings.
+
+Not assuming the code was broken prevented a detour through React error boundaries, Vite config changes, and base path debugging — all of which would have been solving the wrong problem. The build output was correct; the Pages source was misconfigured. This three-step diagnostic sequence (build correct? → deploy correct? → hosting config correct?) is a reliable debugging pattern for any static deployment that produces a blank page or 404 on a successful CI run. Recognizing which layer owns the failure is faster than exhaustively checking all layers from the bottom up.
 
 ---
 
@@ -130,7 +138,15 @@ After seeing the live app: "no bottom nav."
 AI identified the issue: `BottomNav` has `md:hidden` — it correctly disappears on desktop, but no desktop-equivalent navigation existed. Added upload and add icons to the MonthView top bar as `hidden md:flex` elements, sitting between the month title and the forward arrow. Mobile keeps bottom nav, desktop gets header icons.
 
 **Decided:**
-Accepted the fix. The placement is correct — it puts actions near where the user's attention already is (the month header) rather than adding a separate sidebar that would complicate the two-column layout. The icons use the same SVG language as the rest of the UI.
+Accepted the fix. Three alternatives existed for desktop navigation: a left sidebar, a hamburger menu, or a dedicated desktop nav bar. All three were worse choices for this specific layout.
+
+A left sidebar would require a layout change at the `md:` breakpoint — the calendar grid would need to shift right to make room, and the two-column panel overlay already active on desktop would conflict with a persistent left rail. It would also mean maintaining two entirely separate navigation paradigms (sidebar on desktop, bottom bar on mobile) with no shared code.
+
+A hamburger menu is anti-pattern for a six-item nav on desktop — it hides structure that users on large screens have room to see. Desktop nav should be persistent and visible, not buried behind a disclosure widget that adds an interaction step to reach any screen.
+
+A second bottom nav is redundant — the bottom nav is already visible on `sm:` screens and hidden on `md:`, so replicating it for desktop would be a copy of the same component with no architectural reason to duplicate it.
+
+The correct solution: expose Upload and Add Shift as `hidden md:flex` icons in the MonthView top bar, where the user's attention already is when they want to manage their schedule. The header placement is consistent with standard calendar app UI patterns — Google Calendar, Apple Calendar, and Fantastical all place the primary add action in or near the calendar header. The icons use the same SVG language as the rest of the UI, so no new visual vocabulary is introduced. The fix adds two elements visible only on desktop and touches zero mobile layout code.
 
 ---
 
@@ -160,7 +176,13 @@ Identified all three causes: (1) the `public/icons/` directory was created but n
 Fixed by creating `public/icons/icon.svg` (horizontal bars in the three employer colors on a dark background), copying it to `icon-192.svg` and `icon-512.svg` for the manifest, removing the OneSignal script tag entirely, adding `mobile-web-app-capable`, and pointing the apple-touch-icon at the SVG instead of a missing PNG.
 
 **Decided:**
-Accepted all fixes. OneSignal was removed rather than stubbed — it was never configured and has no AppID, so keeping it only produces noise and loads an unnecessary CDN script on every page view.
+Accepted all fixes. The OneSignal decision is the most consequential of the three. OneSignal was removed rather than configured or stubbed for two reasons.
+
+First, OneSignal was never in scope for this build session. It was scaffolded in `index.html` at project setup because the PRD mentions push notifications as a requirement. But shipping push notification infrastructure requires an AppID, a Supabase webhook or cron job to trigger sends, user permission prompts, and cross-platform testing. That's multi-session work that wasn't ready. Leaving a misconfigured CDN script in place produced a console error on every page load and loaded a 300kb+ SDK for zero benefit — it was dead weight that actively degraded debugging sessions by introducing unrelated noise into the console.
+
+Second, removing it sends the right signal about scope discipline: if it's not configured, it doesn't ship. A stub that throws "AppID doesn't match existing apps" is strictly worse than no integration — it implies the feature exists when it doesn't, and it pollutes the console with errors that obscure real problems. The correct pattern is: include a dependency in production only when it is doing something. Anything else is undeclared technical debt.
+
+The icon fix and meta tag fix were straightforward but important for first-contact credibility. Creating `public/icons/icon.svg` used the same three-employer-color visual language as the rest of the app, so the favicon was consistent with the brand system rather than a missing-file placeholder. The `mobile-web-app-capable` / `apple-mobile-web-app-capable` pair ensures PWA behavior on both Android Chrome and iOS Safari, and removing the deprecation warning kept the console clean before Johnny's first session.
 
 ---
 
@@ -276,7 +298,11 @@ Accepted. The localStorage-only approach (no Supabase table for categories) is c
 HTML5 drag-and-drop on each shift emoji in MonthView. Dragging an emoji sets a `draggingShift` state, dims the source cell to 45% opacity, and highlights the drop target with a white ring and scale-up. On drop, calls `updateShift` with the new date — Supabase reflects the change instantly via the realtime subscription. Ghost image is a single emoji rendered off-screen so the browser doesn't drag the full cell.
 
 **Decided:**
-Accepted for the initial push, but the scope was immediately identified as incomplete — HTML5 DnD is not supported on touch screens. Desktop worked. Mobile did not.
+Accepted for the initial push, with the explicit understanding it was a confirmed-incomplete implementation. The editorial call was deliberate: shipping the HTML5 DnD version immediately validated the core interaction model — emoji tracks the pointer, drop target highlights on hover, shift updates via Supabase realtime on drop, floating ghost image prevents accidental drops on unintended cells. These visual and interaction decisions were worth confirming on desktop before investing in a cross-platform rewrite.
+
+The key insight from seeing the desktop version work: the drag-reschedule concept itself was correct. The emoji as the drag handle was readable, the 45%-opacity dimming on the source cell was the right visual signal, and the immediate Supabase update meant the result was visible without a page refresh. These decisions would carry over to the pointer-events implementation regardless of the input method.
+
+The acceptance was conditional, not final. The scope limitation was noted before moving on — which meant Entry 21 was already queued. The correct iterative model is: build the fastest working version, verify the interaction is right, then fix the platform limitation. Building pointer events from scratch without first validating that drag-reschedule felt correct would have risked investing in cross-platform infrastructure for an interaction that didn't work conceptually. Testing on desktop first confirmed it did.
 
 ---
 
@@ -363,7 +389,11 @@ Accepted. The `currentColor` instruction in the SVG prompt is the key design dec
 One-line change in `formatTime` in `dateHelpers.js`: changed the period suffix from `'a'`/`'p'` to `'am'`/`'pm'`.
 
 **Decided:**
-Accepted. "9:30am → 6pm" reads naturally. "9:30a → 6p" was a shorthand that made sense in code but looked unfinished in the UI.
+Accepted immediately. The change is one character per suffix but the impact on legibility is real. "9:30a → 6p" is a developer shorthand — it's how time might appear in a debug log or a data model. "9:30am → 6pm" is how time appears in a product a person reads before leaving the house.
+
+The user context matters here: Johnny is a healthcare worker who reads this display quickly, sometimes in motion — in a hospital hallway, from across a room, while walking to his car. The shift card's time display is the most important element on screen, the first thing he looks at and the last thing he confirms before commuting. Any ambiguity in that display (is "a" AM? is it a label for something else?) should be removed entirely.
+
+The PRD's design principle is "glance, not study" — the app should communicate the answer at a glance, not require the user to interpret shorthand. "9:30a" asks the reader to decode the abbreviated suffix in context. "9:30am" does not. One character removes that decoding step for every single time this user reads this display, which across daily use compounds into a meaningful legibility improvement. The correct standard was "am" and "pm" from the start; the `'a'`/`'p'` shorthand was a default that slipped through initial build.
 
 ---
 
@@ -563,7 +593,13 @@ Accepted. The feature adds genuine value to the commute tab — Johnny can tag "
 Two frosted-glass buttons stacked in the top-right corner of the map container, absolutely positioned as an overlay with `pointer-events: none` on the wrapper and `pointer-events: auto` on each button so the map beneath stays interactive. `+` increments `mapRef.getZoom() + 1`; `−` decrements. Border radius is asymmetric: top button rounds on top corners, bottom button rounds on bottom corners, giving a joined pill appearance. Styled with `rgba(14,14,14,0.85)` background and `backdrop-filter: blur(12px)` matching the "Update home" button. The `−` uses the Unicode minus sign (`−`) rather than a hyphen to render at the correct visual weight.
 
 **Decided:**
-Accepted. `gestureHandling: 'none'` (at the time) blocked pinch-to-zoom on iOS, making the +/− buttons the only way to zoom on mobile. Programmatic zoom via `mapRef.setZoom()` works regardless of gestureHandling — the option only gates user gesture input, not API calls.
+Accepted. The zoom buttons were a direct response to a real mobility constraint: at the time of this request, `gestureHandling: 'none'` was active, which disabled all gesture input on the map. On iOS this meant pinch-to-zoom was blocked — the map was fully locked at its default zoom level. The +/− buttons were the correct addition because they call `mapRef.setZoom()` programmatically, which bypasses the gesture block entirely. Google Maps' `gestureHandling` option controls only whether user gestures are interpreted as map interactions; it has no effect on API calls. Explicit button controls work regardless of gesture settings.
+
+The frosted-glass visual treatment (`rgba(14,14,14,0.85)`, `backdrop-filter: blur(12px)`) matches the "Update home" button already on the map, creating a consistent visual language for all overlaid map controls. The asymmetric border radius — top button rounded on top corners, bottom button rounded on bottom corners — produces a joined pill appearance that reads as a paired control rather than two disconnected buttons. This is a consistent affordance in mapping UIs: Google Maps and Apple Maps both use joined zoom controls specifically because they communicate "these two actions are related" without a label.
+
+The Unicode minus sign (`−`) rather than a hyphen (`-`) matters at small button sizes: at 14px, a hyphen is visually narrower than the `+` and reads as a dash. The proper minus sign matches the `+` visual weight exactly, making the two buttons optically equivalent.
+
+When `gestureHandling` was later switched to `'greedy'` in Entry 32, pinch-to-zoom became available on mobile — but the +/− buttons were kept. They remain useful for precise single-increment zoom, particularly on desktop where scroll-to-zoom can be imprecise when the user's intent is one zoom level, not three.
 
 ---
 
@@ -593,7 +629,13 @@ Screenshot of a shift card in the commute list. "When I also click the card can 
 Changed the shift card from a `<div>` to a `<button>` with `onClick={() => setSelectedDate(date)}` — the same call the day label button already makes. Added `active:scale-[0.98]` for press feedback. When the card's date is the currently selected map date (`isSelected`), the card gets a faint category-color `outline` ring (`${cat.color}40` opacity) to confirm the selection visually.
 
 **Decided:**
-Accepted. The day label button was already the right interaction, but it's a small tap target at the top of the section. Making the entire shift card tappable gives a much larger hit area for the same action — especially important on mobile where the cards dominate the screen. The outline ring closes the feedback loop: tapping any card shows which day the map is currently routing.
+Accepted. The reasoning is about hit area, discoverability, and feedback — all three needed to be correct for this to work on mobile.
+
+The day label button added in Entry 27 (`Thursday  May 28`) is the correct semantic control — tapping a day header to show that day's route is a natural group-select pattern. But a day label on mobile occupies roughly 44×24 pixels of touchable area. The shift card below it occupies the full screen width and approximately 80 pixels of height. When both elements trigger the same map update, the larger, more prominent element should be interactive — that's where the user's hand already is.
+
+The outline ring (`${cat.color}40` opacity) was the critical addition for this feature. Without it, tapping the card produces a smooth map pan with a `· route shown` badge appearing on the day header above — the card itself is silent. The ring confirms selection at the card level, so the user sees feedback exactly where they tapped, not in a different part of the screen they may have scrolled past. The category-color opacity ensures the ring is recognizable as a selection state without overwhelming the card's visual design.
+
+The `active:scale-[0.98]` press animation is consistent with every other tappable card in this app (AddShift modal, OCRUpload employer buttons, ShiftCard in MonthView). Consistent press behavior across all interactive cards creates a unified affordance: anything that scales on press is a button. Any element that doesn't scale is not. Adding this to the commute shift card completes that system rather than creating a gap where one card type feels unresponsive.
 
 ---
 
@@ -606,7 +648,11 @@ Screenshot of sidebar showing "Yo Johnny" / "Good to see you Johnny" greeting. "
 Removed the `GREETINGS` array and random greeting from `Sidebar.jsx`. Replaced the greeting `<div>` with the three-bar icon + wordmark lockup matching the login screen: a 32×32 dark-rounded box containing three stacked bars in Publix green (#00A651), Vanderbilt gold (#CFB87C), and Nashville General blue (#2D6DB5) at 71% and 43% widths respectively, followed by "Shift" in white and "Stack" in `text-white/40`. `useState` import removed since it was only used for the greeting.
 
 **Decided:**
-Accepted. The rotating greeting was appropriate for a prototype but not for a tool used daily — it added noise without information. The logo is identifiable, consistent with the login screen, and leaves the sidebar header as a stable landmark rather than a random message.
+Accepted. The rotating greeting was built into the prototype specifically for first contact — showing Johnny a personalized message ("Good to see you, Johnny") makes the app feel made for him, which is accurate and appropriate for a first-exposure session. But Johnny's use pattern after adoption is not first exposure. It is daily access, same device, same account, multiple times a day before and during shifts. A greeting that changes randomly on each open provides no information on the twentieth visit. It adds visual noise to a screen Johnny opens specifically to navigate to a different screen.
+
+The replacement — the three-bar icon lockup with "Shift" in white and "Stack" in `text-white/40` — is stable, immediately identifiable, and matches the login screen. The login screen is the first thing Johnny sees when he authenticates; the sidebar header being the same visual element means the app's identity is coherent from entry to navigation. When both the first screen and the persistent nav use the same wordmark, the app feels intentional, not cobbled together. A random greeting at the top of the nav is a design element left over from prototyping that has no purpose in daily use.
+
+Removing `useState` from the Sidebar component was a minor architectural improvement that the greeting removal unlocked. The component no longer needs to initialize state or track a selected greeting, which makes it a pure render function. A sidebar with no internal state is easier to reason about, easier to test, and renders faster. This is a small gain but it compounds: every component that doesn't need state and doesn't have it is simpler than every component that doesn't need state but has it anyway.
 
 ---
 
@@ -675,7 +721,11 @@ After the edge function bypass shipped, a new error appeared: `Unexpected token 
 One-line fix in `extractShifts.js`: after reading `data.content[0].text`, the raw string is cleaned with two regex replacements before `JSON.parse`: `raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '')`. Handles both ` ```json ` and plain ` ``` ` wrappers.
 
 **Decided:**
-Accepted. The prompt instruction is correct but the model is non-deterministic — it sometimes follows formatting instructions and sometimes doesn't, especially at lower temperature or on shorter responses. The defensive strip is the right layer to add this: cleaning the raw string before parsing means the code is correct whether or not the model obeys the instruction. The same strip was already present in the edge function from Entry 15; the new client-side path needed the same guard.
+Accepted. The prompt instruction (`Return ONLY a raw JSON array — no markdown, no backticks, no explanation.`) is correct and necessary — without it, Claude wraps output in fences on the majority of calls. With it, Claude obeys the instruction on most calls. But "most calls" is not sufficient for a feature that parses JSON: a single unstripped fence causes `JSON.parse` to throw `SyntaxError: Unexpected token '\`'`, which surfaces to the user as a failed import with a cryptic error message they cannot act on.
+
+The defensive strip is two regex replacements applied unconditionally after every API response, before `JSON.parse`. If the model returned a naked array, both regexes match nothing and leave the string unchanged. If it returned a fenced array, the fences are stripped and `JSON.parse` succeeds. The cost is two fast string operations per call — negligible. The benefit is that the feature works correctly even when the model doesn't follow formatting instructions exactly.
+
+This pattern is generalizable to every place in this project that calls an AI model and parses structured output: prompt engineering sets intent; defensive parsing handles variance. Both layers are necessary, and neither is sufficient alone. The same strip was added to the Supabase Edge Function in Entry 15 after Claude returned fenced JSON despite identical instructions. The history is consistent — at every point in this project where AI-generated output has been parsed, the model has at some point violated the no-markdown instruction. The strip is not defensive coding against an unlikely case; it responds to observed, repeatable model behavior across three separate parsing sites in this codebase.
 
 ---
 
@@ -688,7 +738,11 @@ Accepted. The prompt instruction is correct but the model is non-deterministic �
 Added Section 12: "App Architecture & User Flow" to `README.md` immediately following Section 11 (User Testing). The flowchart traces the full system from Supabase Auth entry through five screen paths: Upload Schedule (screenshot → Canvas compression → Anthropic AI → review → Supabase), Add Shift Manually (form → Google Places → Supabase), Month View (tap date → shift card → tasks → Supabase), Commute View (commuteCalc → leave-time display), and Today View (glance state). Realtime sync loop shown as a return edge from Supabase back to Month View.
 
 **Decided:**
-Accepted. The diagram bridges the UX research document and the technical implementation — it shows how the decisions traced through the README (screenshots, commute, tasks) map onto actual system components and data flows. GitHub renders Mermaid natively in READMEs, so no image export or external tool is needed.
+Accepted. The placement — Section 12, immediately following the User Testing section — is deliberate. The README traces the product from user research (Sections 1–3, Johnny's behavior observations and pain points) through design decisions (Sections 4–8, PRD decisions and UI system) to user testing feedback (Section 11). The architecture diagram at Section 12 closes the narrative: it shows how the decisions documented in the README actually translate into running system components and data flows. Without it, the README describes what was built and why; the diagram shows how it actually works as a connected system.
+
+For the AI 201 case study context, the diagram documents specifically how AI-assisted building distributes work across the stack. The Upload Schedule path (screenshot → Canvas compression → Anthropic AI → review → Supabase) shows AI doing the semantic interpretation layer that replaced ~150 lines of fragile Tesseract parsing. The Add Shift path (form → Google Places → Supabase) shows the validation layer that prevents bad addresses from reaching the geocoder. The Month View and Today View paths show the Supabase realtime subscription loop that makes all screens reactive without page refresh. A prose description of this architecture would take multiple paragraphs and be harder to navigate than a diagram that communicates the same information in a glance.
+
+GitHub's native Mermaid rendering is what makes this worth including rather than exporting a PNG. An exported image goes stale the moment the architecture changes and requires a separate tool to update. A Mermaid diagram in the README is live documentation: it can be updated alongside the code in the same commit, and it renders correctly in the repository browser, in pull request previews, and in any Markdown renderer that supports Mermaid. For a case study that documents AI decision-making across a full build, having the architecture diagram in version control alongside the code is the right choice.
 
 ---
 

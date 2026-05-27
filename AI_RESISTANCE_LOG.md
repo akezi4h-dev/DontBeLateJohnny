@@ -46,13 +46,13 @@ This is a class project with no budget. A working free solution that sometimes m
 After receiving the full PRD with a clear Claude Code prompt section that said "Copy and paste this entire prompt into Claude Code to scaffold the project," AI asked three clarifying questions before writing a single line of code: GitHub username, which branch, and how complete the prototype needed to be for tomorrow's session.
 
 **Why I rejected it:**
-The questions weren't wrong — they were stalling. The PRD had everything needed to start. The Claude Code prompt was explicit. Two of the three questions (GitHub username, branch) were configuration details that could have been asked mid-build or handled with a placeholder.
+The questions weren't wrong — they were stalling. The PRD had everything needed to start. The Claude Code prompt section was labeled "Copy and paste this entire prompt into Claude Code to scaffold the project" — that's not an ambiguous instruction. Two of the three questions (GitHub username, branch) were configuration details that could have been handled with sensible defaults or asked mid-build without blocking the scaffold. The third question (scope for tomorrow's session) was answered explicitly in the PRD's milestone table.
 
 **What I did instead:**
-Answered all three questions immediately and directly: `DontBeLateJohnny`, `main`, Month View and Shift Card for tomorrow. Pushed AI to start building.
+Answered all three questions immediately and directly: `DontBeLateJohnny`, `main`, Month View and Shift Card for tomorrow. Pushed AI to start building rather than continuing the Q&A.
 
 **Why it's better:**
-The session had a hard deadline — first contact with Johnny was the next day. Every question that didn't need to be asked before the build was time lost. The right model for a deadline build is: ask the minimum, build the maximum, fix during iteration. AI's caution was reasonable in a normal context but wrong for this timing.
+The session had a hard deadline — first contact with Johnny was the next day. Every question that didn't need to be answered before the scaffold was time lost from building. More importantly, the pattern AI was defaulting to — ask until all uncertainty is resolved before touching code — is wrong for deadline-driven builds where some questions can only be answered by seeing the thing. The right model: ask the minimum that's truly blocking, build the maximum that can be built, fix during iteration. AI's caution is reasonable in open-ended contexts with no deadline. It was wrong for a build that had one shot at being ready for a real user in less than 24 hours.
 
 ---
 
@@ -62,13 +62,13 @@ The session had a hard deadline — first contact with Johnny was the next day. 
 After the first GitHub Pages deployment, the live URL served a completely blank white page. AI's initial response was to check asset paths in the built `index.html`, confirm they looked correct, and suggest the issue might be a Pages configuration problem.
 
 **Why I rejected it:**
-The diagnosis was surface-level. "Asset paths look correct" is not a diagnosis — it's an observation. The actual cause was that the Supabase build ran before the GitHub secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) were added to the repository. This meant `import.meta.env.VITE_SUPABASE_URL` resolved to `undefined` at build time, causing `createClient(undefined, undefined)` to throw on load and crash React before it mounted. The white page was a JavaScript runtime error, not an asset path issue.
+The diagnosis was surface-level. "Asset paths look correct" is not a diagnosis — it's an observation that leaves the root cause entirely unaddressed. The actual cause was that the GitHub Actions `deploy` job ran before the required secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) were added to the repository's secrets settings. At Vite build time, `import.meta.env.VITE_SUPABASE_URL` resolved to `undefined`. That produced `createClient(undefined, undefined)`, which threw a Supabase client initialization error at load time — crashing React before it could mount a single component. The white page was a JavaScript runtime error, not a missing file.
 
 **What I did instead:**
-Pushed back with the actual symptom ("this is what I see") and forced AI to go deeper. Eventually identified the real cause: secrets missing from the build environment. Re-ran the Actions job after adding secrets.
+Pushed back with the actual symptom: "this is a white page, not a 404." Forced AI to go deeper than checking the HTML. Eventually surfaced the real cause through the console error path: secrets missing from the build environment. Added secrets to repository settings, re-triggered the Actions job, site loaded correctly.
 
 **Why it's better:**
-The surface-level diagnosis would have sent time toward checking HTML paths that were already correct. Identifying the real cause (env vars undefined at build time) pointed directly at the fix. The lesson is that a blank page on a deployed React app almost always means JavaScript crashed on load — the first question should be "what error does the console show," not "are the asset paths right."
+The surface-level diagnosis would have sent debugging effort toward checking asset paths, base URL config, and Vite build output — all of which were already correct. Identifying the real cause (env vars resolving to `undefined` at build time, producing an unhandled throw before React mounted) pointed directly at the fix. This established a debugging heuristic that proved useful across the rest of the build: a blank page on a deployed React app means JavaScript crashed on load. The first diagnostic question is always "what does the browser console show," not "are the file paths correct." The console shows the exception type and call site; the HTML paths are just artifacts of a build that may have already succeeded.
 
 ---
 
@@ -94,13 +94,13 @@ First contact sessions need the product to look inhabited. An empty app invites 
 When directed to add a login screen, AI defaulted to email + password without asking which auth method to use, noting it was going with that approach and that magic link was an alternative.
 
 **Why I rejected it:**
-I didn't reject the choice — email + password was the right call for Johnny's context. But I did add a requirement AI hadn't included: persistent sessions. AI built a login screen that would work but would ask Johnny to log in again after every session expiry.
+I didn't reject the auth method choice — email + password was correct for Johnny's context. Supabase Magic Link would have sent an email every time the session expired, which is impractical for a healthcare worker who rarely uses email on shift. Password auth is simpler and fully within his control. What I rejected was AI's incomplete implementation: the login screen worked, but AI's default Supabase session expiry is 7 days of inactivity. A healthcare worker with two days off between shifts could easily hit that expiry and be prompted to log in again mid-week.
 
 **What I did instead:**
-After seeing the login screen, directed AI to keep him logged in and not prompt again. Then extended the JWT expiry from 7 days to 90 days in Supabase settings.
+After seeing the login screen, directed AI to make the session persistent — "remember when he's logged in and don't ask him to login again." Then extended the JWT expiry from the default 7 days to 90 days in Supabase Dashboard → Authentication → Settings → JWT expiry.
 
 **Why it's better:**
-Johnny uses this app daily across two devices while walking between hospital locations. An app that interrupts him with a login screen mid-month would break the use case entirely. The PRD's entire argument is that Johnny will check one screen instead of three — that only holds if the one screen is frictionless. Persistent 90-day sessions remove an interruption that would have contradicted the product's core thesis.
+Johnny uses this app daily across two devices — his iPhone while commuting and his desktop at home for shift planning. An app that prompts him to re-authenticate while he's between hospital locations, or before a shift starts, directly contradicts the product thesis. The PRD's entire argument is that Johnny will check one screen instead of managing three separate schedule sources — that value proposition only holds if the one screen is frictionless. Any login interruption breaks the habitual daily access pattern the app depends on. 90 days covers realistic usage: even during vacation, holidays, or slow weeks without shifts, the session stays valid. The tradeoff (longer session expiry = marginally higher risk if the device is compromised) is acceptable for a single-user personal scheduling tool that stores no sensitive clinical data.
 
 ---
 
