@@ -510,11 +510,14 @@ Round 3 focused on validating the Round 2 glanceability finding. The app was tes
 
 ### User Testing Results
 
-> 📷 *[Screenshot: Round 3 — Today View urgency state during session]*
+![Round 3 — Today View desktop, amber urgency state: "Leave by 8:47am" for Vanderbilt shift](docs/app-round3-today-view-urgency-amber.png)
+*Round 3 desktop: Today View in amber urgency state — Vanderbilt 9:30am → 6pm, "Leave by 8:47am" (~43 min commute). The amber color signals it's time to start preparing. Custom employer icons visible in the sidebar for all three employers.*
 
-> 📷 *[Screenshot: Round 3 — Custom category icon for one of Johnny's employers]*
+![Round 3 — Mobile Today View with Publix custom icon, calm state, "Leave by 8:20am"](docs/app-round3-today-view-mobile-custom-icon.png)
+*Round 3 mobile: Publix Pharmacy 9am → 9pm, calm green state, "Leave by 8:20am". The "P" logo is a custom AI-generated SVG icon — the feature Johnny requested: "maybe make customizable logos."*
 
-> 📷 *[Screenshot: Round 3 — App installed on Johnny's iPhone home screen, if applicable]*
+![Round 3 — Shift Stack installed as a PWA on Johnny's iPhone home screen](docs/app-round3-iphone-home-screen-pwa.png)
+*Round 3: Shift Stack installed as a PWA on Johnny's iPhone home screen alongside native apps — confirming it felt close enough to daily use to install.*
 
 ### Key Findings From Third Round Testing
 
