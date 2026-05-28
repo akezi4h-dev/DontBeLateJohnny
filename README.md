@@ -1634,3 +1634,98 @@ The ambulance sticker system is gone. Johnny has one place for all three hospita
 He still verifies OCR imports. Past dates still aren't faded. There's a drag-to-reschedule feature nobody asked for.
 
 *"This feels way more organized than what I was doing before."* That's Round 3. It's not a solved problem. It's a person who found a tool less bad than the one he built himself out of ambulance stickers and iMessage threads. For a first version tested three times with a real user, that's an honest result.
+
+---
+
+# Section 16 : Five Questions
+
+*The rubric for this project asked five questions. These are specific answers, grounded in what actually happened.*
+
+---
+
+## Can I defend this?
+
+Every decision in this project has a source that isn't me.
+
+The employer colors (`#00A651` Publix green, `#CFB87C` Vanderbilt gold, `#2D6DB5` Nashville General blue) came from actual brand documentation in the PRD — not approximations, not aesthetic preference. The reason is specific: Johnny glances at colored dots on a calendar to recognize an employer without reading the name. An invented green wouldn't do the same thing.
+
+The large shift-time display came from Round 1. Johnny said *"I like that the shift times are big because that's the main thing I care about."* He was describing what he does when he looks at his current screenshot — scan for the number, ignore everything around it. The UI was already built that way, and he named it without prompting.
+
+The Today View became the primary surface not because it seemed like a good idea, but because Round 2 produced: *"I mostly just care about the next shift and when I should leave."* That quote changed the entire product direction. If Round 2 hadn't happened, the project would have spent its final build cycle deepening a monthly planning view for a person who opens the app, reads one number, and closes it.
+
+The commute leave time — the feature Johnny called out most consistently across all three rounds — came from his own words in the initial interview: *"My problems revolve around commute times and making sure I got the necessary time/bandwidth to take care of the things I need to do."* That is a direct line from a recorded problem statement to a shipped feature.
+
+The one decision I can't fully defend: drag-to-reschedule. It works. It is in the app. There is no moment in three rounds of testing where Johnny mentioned wanting it. It came from a PRD section on "schedule editing" written before any testing, and three sessions never validated it. That is an honest answer.
+
+---
+
+## Is this mine?
+
+The direction on every build decision came from Johnny's behavior, not from what AI thought the app should be.
+
+When AI wanted to stub the OCR upload button for first contact — give Johnny a placeholder screen to react to — I rejected it and directed AI to wire Tesseract fully before the session (Resistance Entry 01). The reasoning: Johnny's entire current workaround is screenshot-based. If the OCR doesn't actually run, we learn nothing about whether the concept is right. A stub button tells you a person tapped it. A working upload tells you whether they'd replace their current system with this one.
+
+When AI scaffolded email and password authentication as a default (Resistance Entry 06), I accepted the auth architecture but extended the session timeout from 7 days to 90 days specifically because of Johnny's usage pattern: daily, across two devices, with gaps during schedule changes. A 7-day timeout would have expired during a normal week off. That is a decision about his life, not a default setting.
+
+When AI built a desktop-only drag implementation after I asked for drag-to-reschedule (Resistance Entry 12), I rejected it because Johnny was using both a laptop and an iPhone in testing. A feature that works on one device and silently doesn't work on the other is worse than a feature that doesn't exist — it erodes trust without explanation.
+
+The font pairing (Syne for display, Space Grotesk for metadata), the employer color system, the three-employer scope, the session-based architecture — all of these were specified in the PRD and directed into the build. AI generated the code. The decisions were mine, and they were grounded in research before AI touched anything.
+
+---
+
+## Did I direct AI based on my Design Argument?
+
+Yes. The AI Direction Log documents 40 build entries. The AI Resistance Log documents 18 rejected outputs. The pattern across both is the same: when AI produced something technically correct but contextually wrong for Johnny, I rejected it and said why.
+
+Entry 01 established the relationship before any code was written. The instruction was: *"do not build out anything until I give you documentation on the assignment and the class. We start with questions."* AI was not allowed to generate a single component until the PRD — grounded in direct research with Johnny — was complete and dropped. This was a deliberate choice to prevent AI from solving a problem it hadn't been shown.
+
+The specific rejections that show direction over acceptance:
+
+- AI proposed approximating employer colors. I specified the exact hex values from brand documentation because recognition speed depends on the actual color, not a similar one.
+- AI recommended Claude Haiku for OCR (cheaper, faster). I overrode to Claude Haiku for the final path but only after testing that the prompt produced accurate results — the accuracy requirement came from Johnny's trust concerns, not from a cost-performance default.
+- AI defaulted to a Supabase edge function for the OCR pipeline. When the edge function broke and couldn't be fixed without a terminal, I bypassed it entirely and moved to browser-direct API calls — a pattern already established for AI icon generation. The decision was: Johnny needs this to work, not to be architecturally correct.
+- When AI wanted to add an AI Icon tab to the category editor, I held that feature until after Round 2, because Johnny hadn't asked for custom logos yet. He asked in Round 2 ("maybe make customizable logos where you can upload and change the logos"). It was built before Round 3. The sequence — user asks, then feature is built — is the only acceptable order.
+
+*"It looked cool"* is not in any entry in either log. Every accepted output has a reason that connects to Johnny or to a specific technical constraint. Every rejected output has a reason that explains what the default got wrong about this specific person.
+
+---
+
+## Did I verify?
+
+Three in-person sessions. Texts and calls between each one.
+
+**May 9 — First contact.** iPhone 14 and laptop, same session. Johnny navigated, imported, and broke things. The employer color system landed immediately. OCR failed on two specific screenshots — one imported a wrong time, one dropped a shift silently. He noticed both without being prompted. That session produced the desktop navigation finding, the OCR failure documentation, and the first real evidence that the color system was doing what it was supposed to do.
+
+**Between Round 1 and Round 2.** The OCR prompt was rewritten based on the specific failures observed in session — shorthand time formats (`9a - 7p`), dashed-border unconfirmed shifts. I confirmed with Johnny by text which screenshots had failed and what the correct times were. The revised prompt was tested against those same screenshots before Round 2, not just in a browser with invented data.
+
+**Between Round 2 and Round 3.** Johnny asked for customizable employer logos in Round 2. I called to confirm he meant upload-your-own or generate-from-description before building the AI icon feature. Building first, confirming later would have produced the wrong thing. The call came before the build.
+
+**May 25 — Third contact.** Full feature set. He went to Today View on mobile and read the leave time in under three seconds without any instruction. He said the navigation makes sense. He asked for past-date fading. He said OCR is better but he still double-checks. He installed the PWA on his phone.
+
+The evidence in this README — the quotes, the round-by-round findings, the before/after screenshots — came from those sessions. None of it was invented or reconstructed. The Round 1 OCR failure screenshots are the actual screenshots Johnny uploaded. The quotes are from the actual sessions. The home screen photo is his actual phone.
+
+---
+
+## Would I teach this?
+
+Yes. Specifically:
+
+**How to extract a real design problem from a person who doesn't think they have a design problem.** Johnny said *"habit"* when asked why he uses the screenshot-sticker system. He didn't say "the current tools don't serve my needs." He said habit. The research task was to understand what the habit was protecting him from — the answer was: three separate logins, three separate systems, no single place to see all three. That's the problem. "Habit" is the symptom.
+
+**How to use user testing to find out you built the wrong thing.** Round 2's most important finding wasn't a feature that worked or failed. It was that the app was designed around a mental model — monthly planning across employers — that Johnny doesn't use. He uses it like a lookup. That finding was only available because a real person used a real product in front of me. No amount of in-browser testing would have surfaced it.
+
+**How to direct AI without letting it make decisions.** The AI Direction Log is a teachable artifact. Entry 01 shows what happens when you hold AI back until the research is done. The Resistance Log shows what happens when AI pattern-matches to a generic app instead of this specific person. The lesson isn't "AI makes mistakes" — it's "AI optimizes for the general case and you are always building a specific case." Knowing when the general case is wrong requires the research. The research has to come first.
+
+**How to tell the difference between a constraint and an excuse.** No terminal access meant no server deployments. That could have been treated as a blocker. Instead it produced browser-direct API calls that turned out to be simpler and more reliable than the proxied server approach they replaced. Every major architecture decision in this project was shaped by a constraint, and every one of them produced a better outcome than the default path would have. That's a transferable lesson: constraints force specificity, and specificity produces better design than open scope.
+
+---
+
+## Is my disclosure honest?
+
+Yes. And I want to be specific about what that means.
+
+The AI Direction Log documents what I actually asked AI to build. The Resistance Log documents the outputs I rejected and why. Neither log was written to make the process look cleaner than it was. Entry 15 — two bad commits in a row on the same syntax error — is in the log because it happened, not because it reflects well on the process. The post mortem names drag-to-reschedule as a feature built without user evidence because that is true, and leaving it out would misrepresent what the project produced.
+
+The user testing quotes are real. They came from in-person sessions with Johnny Truong. I did not manufacture quotes to fill a rubric. I did not attribute observations to Johnny that came from my own browser testing. The Round 1 OCR failure screenshots are the actual screenshots he uploaded during the May 9 session. The Round 3 iPhone home screen photo is his actual phone.
+
+The reason the disclosure is honest is not because honesty was required. It's because the whole point of this project was to build something for a real person with a real problem. Fabricating evidence of how well it worked would mean fabricating evidence that Johnny's life was improved by something I built for him. I genuinely wanted this to work for him. The documentation reflects what it actually did — which is better than his screenshot-sticker system, and not yet good enough to trust completely. That's an honest result, and it's the only result worth documenting.
