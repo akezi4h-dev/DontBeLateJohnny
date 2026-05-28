@@ -1569,72 +1569,68 @@ The constraint forced a simpler architecture. The edge function was a proxy that
 
 # Section 15 : Post Mortem
 
-*What the project set out to do, what it actually did, what it got wrong, and what would change if it started over.*
+---
+
+## Did it solve the problem?
+
+**Partially.** The original system: screenshot Publix calendar, paste ambulance stickers on dates for the other two hospitals, text himself reminders, cross them out in iMessage. After three rounds of testing, all of that is gone. Three employers in one place. OCR import instead of manual sticker placement. A Today View that calculates leave time automatically. Push notifications at 30 min, 10 min, and leave-now. He installed it on his iPhone home screen.
+
+What it didn't replace: the need to verify. Johnny said *"the imports work better now but I still double check them."* The manual step didn't disappear — it shifted. Before: manually entering every shift into a photo. After: confirming that the AI got it right. That's a real improvement in effort, but it isn't the same as trust. The problem went from *"I have to manage everything across three separate apps"* to *"I have to verify what one app tells me."* That distinction matters and the project never fully closed it.
 
 ---
 
-## The Ambulance Sticker Problem — Resolved?
+## What worked
 
-**Partially.** The original behavior was: screenshot Publix calendar, paste ambulance stickers on dates for the other hospitals, text himself reminders, cross them out manually. After three rounds of testing, the app replaced all of that — one place for all three employers, OCR import instead of manual sticker placement, a Today View that calculates leave time automatically, and push notifications so he doesn't have to remember to check. He installed it on his iPhone home screen. He said "this feels way more organized than what I was doing before."
+**Changing what the app was for mattered more than any feature.** The most important design decision in the project happened in Round 2, not in the build. Johnny said *"I mostly just care about the next shift and when I should leave."* He wasn't using the app to plan — he was using it to look up one thing and close it. Every assumption behind the original design (unified monthly planner, multi-employer scheduling calendar) was wrong about how he actually behaved. Reorienting the whole product around the Today View — leave time as the first visible number, urgency states readable at a glance — came directly from watching him use it, not from the PRD. If that session hadn't happened, the project would have spent its final round optimizing a planning metaphor for a person who never plans.
 
-What it didn't fully replace: trust in the OCR output. Johnny said "the imports work better now but I still double check them." The manual verification step that screenshot-stickers required still exists, just in a different form. The problem went from *"I have to manage everything across three separate apps"* to *"I have to verify what one app imports."* That's progress, but it's not a complete solve.
+**The desktop navigation fix was the cleanest before/after in the project.** Round 1: *"I didn't know where to go next on laptop because there wasn't a clear menu."* One change — a persistent sidebar for desktop. Round 2: *"The navigation makes more sense now."* Direct problem, single intervention, confirmed result. This is what user testing is supposed to produce and rarely does this legibly.
 
----
+**The OCR improvement between Round 1 and Round 2 was real.** Round 1 failures were specific and documented: `9a - 7p` was misread because the prompt had no rules for shorthand time formats; dashed-border unconfirmed shifts were imported as confirmed or silently dropped with no error shown. The prompt was rewritten with explicit parsing rules and a dashed-border exclusion instruction. Round 2 tested the same source screenshots — times read correctly. Johnny said *"the screenshots imported better this time."* That is a measurable before/after result with the same user on the same input.
 
-## What Worked
-
-**The glanceability pivot was the right call.** The most useful design decision in the whole project wasn't a feature — it was changing what the app was *for*. Round 2 surfaced that Johnny doesn't use a calendar app to plan. He opens it, reads the next thing, and stops. Building toward that — Today View as the primary surface, leave time as the first-visible number, urgency states that read at a glance — directly addressed the actual behavior rather than the assumed one. If Round 2 hadn't happened, the app would have optimized for monthly planning that he never does.
-
-**The desktop navigation fix had an immediate, measurable effect.** Round 1 produced one clear finding: "I didn't know where to go next on laptop because there wasn't a clear menu." One sidebar later, Round 2 produced: "The navigation makes more sense now." Direct cause and effect, single change, confirmed in one session. This is what user testing is supposed to do and rarely does this cleanly.
-
-**The constraints forced better architecture than the default path would have.** No terminal access meant no server deployments — which pushed every API call client-side. That turned out to be the right architecture for a personal tool with one user. No schema migration meant categories lived in localStorage — which is faster, simpler, and requires zero infrastructure. The Supabase edge function for OCR was eventually bypassed entirely because fixing it would have required a terminal. The browser-direct replacement was fewer moving parts and one less failure surface. Constraints that felt like obstacles produced decisions that would have been hard to justify on their own merits.
-
-**The OCR improvement between Round 1 and Round 2 was real and demonstrable.** The Round 1 failure was documented: `9a - 7p` was misread, dashed-border unconfirmed shifts were imported as confirmed or dropped silently. The prompt was rewritten with explicit parsing rules for shorthand times and a dashed-border exclusion instruction. Round 2 tested the same source screenshots. Times read correctly. Johnny said "the screenshots imported better this time." That's a before/after result with a real user on real data.
+**Constraints produced better architecture than deliberate choices would have.** No terminal access meant no server-side deployments, which pushed every API call client-side. That turned out to be the right architecture for a personal tool: no infrastructure to maintain, no deployment step to break, no Supabase Edge Function to misconfigure. The OCR pipeline was eventually rewritten as a browser-direct Anthropic call specifically because fixing the edge function was impossible without a CLI. The browser-direct version was simpler, faster, and had fewer failure surfaces than the one it replaced. The category system living in localStorage rather than a database schema meant zero migration overhead whenever the data structure changed — which it did repeatedly. These weren't planned decisions. They were forced by constraints, and they were correct.
 
 ---
 
-## What Didn't Work
+## What didn't work
 
-**OCR accuracy never reached the threshold where Johnny stopped verifying.** After three rounds and multiple prompt revisions, he still double-checks imports. The fundamental issue isn't the prompt — it's that hospital scheduling systems weren't designed to be machine-read. They use inconsistent terminology (some don't say "shift" at all), non-standard time formats, and visual layouts that differ across employers and even across export formats from the same employer. A language model reading a compressed screenshot of a table is always going to be imperfect. The better long-term answer is a structured data feed, not better OCR — but that requires employer API access that doesn't exist.
+**OCR accuracy never reached the level where Johnny stopped verifying manually.** Three rounds of prompt revision improved accuracy on known failure cases but didn't solve the underlying problem: hospital scheduling systems were not designed to be machine-read. Inconsistent terminology (some don't use the word "shift" at all), non-standard time shorthand, and layout differences between export formats from the same employer mean any screenshot-based OCR will have a false-confidence ceiling. The better answer is structured data from employer APIs, not a better AI prompt. That access doesn't exist.
 
-**Drag-to-reschedule was built without evidence he needed it.** It's in the app. It works. There's no moment in any testing session where Johnny said anything close to "I wish I could drag shifts around." This was a feature built because it seemed technically interesting and because the PRD had a section on "schedule editing." Three rounds of testing never validated it. It cost real development time and introduced the dead zone / pointer events complexity for a behavior that wasn't observed in the actual user.
+**Drag-to-reschedule was built with no evidence it was needed.** It works. There is no moment in three rounds of testing where Johnny said anything about wanting to drag shifts. The feature came from the PRD's "schedule editing" section — written before any testing, based on what seemed like an obvious scheduling need. It cost real build time and introduced pointer events complexity and an 8px dead zone that wouldn't exist if the feature hadn't been built. The lesson: features listed in a PRD that never get mentioned by the user across three sessions were probably wrong assumptions from the start.
 
-**Past date fading was requested in Round 3 and never built.** Johnny said "fading old shifts would make the calendar easier to scan." It made the post-Round-3 change list. It wasn't implemented before the project closed. It's still not in the app. This is the clearest example of a validated, specific, actionable finding that didn't make it into the build.
+**Past-date fading was requested in Round 3 and never shipped.** Johnny said *"fading old shifts would make the calendar easier to scan."* It went on the post-Round-3 change list. It isn't in the app. This is the clearest example in the project of a validated, specific, user-articulated need that didn't make it into the build before the project closed.
 
-**Auth added friction without adding value for a single-user tool.** Email and password login was the first thing AI scaffolded (documented in Resistance Entry 06). It made sense as a default for a multi-user product. For a tool designed around one specific person's schedule, it's a gate between "I want to check when I work tomorrow" and the actual answer. Supabase auth also introduced the loading state, the session management, and the `if (!user)` redirect — all overhead that exists purely because the data lives in a shared database. A personal tool built around a single user doesn't need authentication. It needs sync.
-
----
-
-## What Would Change
-
-**Build the Today View first, not last.** The most-used surface in the final product was the last major view added. The calendar grid came first because it was the obvious mental model for a scheduling app. But Johnny's actual behavior — open app, check next shift, close app — would have been captured immediately by a Today View that existed from the first contact session. Building in order of "what seems logical for a calendar app" delayed the most important discovery by two full rounds.
-
-**Skip Supabase for a single-user tool.** Supabase realtime, row-level security, and auth are the right infrastructure for a product with multiple users. For one person's schedule, they introduce deployment dependencies, connection management, and authentication overhead that don't pay off. A local-first approach — SQLite via OPFS, or just localStorage with periodic export — would have been faster to build, faster to load, and impossible to break via a misconfigured edge function.
-
-**Design the OCR flow around failure, not success.** The OCR prompt was written to import shifts correctly. Every revision made it better at the success case. What it was never designed around was the failure case: what does Johnny see when a shift is missing, when a time is wrong, when an unconfirmed shift gets through? Round 1 showed a generic error after 100% progress with no indication of what failed. That should have been the first thing designed — not the last thing patched.
-
-**Set a feature freeze after Round 2.** The Round 2 finding — "I mostly just care about the next shift and when I should leave" — was a signal to stop adding features and deepen the ones that existed. Instead, Round 3 was prepared for by building custom AI icons, drag-to-reschedule, and notification alerts. Some of those were validated (custom icons, notifications). Some weren't (drag-to-reschedule). A feature freeze after Round 2 would have forced focus on OCR reliability and past-date fading — the two things Johnny actually asked for in Round 3 — instead of new capabilities.
+**Auth was the wrong infrastructure decision for a single-user personal tool.** Email and password login was the first thing scaffolded — a default move for any app that involves a database. For a tool designed around one person's schedule, it's a mandatory step between "I want to know when I leave for work tomorrow" and the answer. It also introduced Supabase session management, the loading state, the `if (!user)` redirect, and 90-day session expiry — overhead that exists only because data lives in a shared database. A personal tool with one user doesn't need authentication. It needs sync.
 
 ---
 
-## On Working With AI
+## What would change
 
-The AI Direction Log and AI Resistance Log document 40 build entries and 18 resistance entries. The short version of what they show:
+**Build the Today View first.** The most-used surface in the final product was the last major view added. The calendar grid came first because it was the obvious mental model for a scheduling app. It was not Johnny's mental model. His behavior — open, check next thing, close — would have been visible from Round 1 if Today View existed at Round 1. Building in order of "what a calendar app looks like" instead of "what this specific person does" delayed the most important finding by two full rounds.
 
-AI was fast and accurate at **execution within a clear scope** — generating components from a PRD, wiring up APIs, writing prompt templates, building the Mermaid architecture diagram. When the task was well-defined and the context was current, it produced working code on the first attempt more often than not.
+**Use local-first storage, not a hosted database.** Supabase realtime, row-level security, and auth are the right infrastructure for a multi-user product. For one person's schedule on their own device, they introduce authentication overhead, connection management, deployment dependencies, and network failure modes that a localStorage or SQLite approach wouldn't have. Every time the edge function broke, the fix required infrastructure access that wasn't available. Every time auth behaved unexpectedly, it blocked a user testing session. A local-first approach would have had none of those failure modes.
 
-AI was unreliable at **judgment calls without user context** — it wanted to stub OCR before first contact (Entry 01), defaulted to email auth without asking (Resistance 06), used React state as a proxy for API readiness (Resistance 17), and built desktop-only drag before checking whether drag was needed at all (Resistance 12). Every one of those decisions came from pattern-matching to how apps usually work, not from anything specific about Johnny or this project.
+**Design the error state before the success state.** The OCR flow was designed around the case where everything imports correctly. Round 1 exposed what happens when it doesn't: a generic error at 100% progress with no indication of which shifts were missing or why. The failure state should have been the first design decision — what does Johnny see when a shift silently drops, when a time is parsed wrong, when an unconfirmed shift gets through? Designing that first would have produced a more trustworthy system earlier, and trust was the metric that never fully resolved.
 
-The AI Direction Log exists because the most important thing in a user-research-driven project is that the research drives the decisions, not the AI's defaults. That required active rejection of suggestions that were technically reasonable but contextually wrong. The Resistance Log is evidence that this rejection happened regularly and was worth documenting.
-
-The collaboration was most productive when AI was handed a specific constraint and asked to solve inside it. "Build this feature, but the API key must stay browser-side" produced the pattern used across three features. "Build the commute map, but no server endpoints" produced the cached geocoding approach. Constraints created specificity; specificity produced better solutions than open-ended prompts.
+**Call a feature freeze after Round 2.** *"I mostly just care about the next shift and when I should leave"* was a signal to stop building new things. Instead, Round 3 prep included custom AI icons, drag-to-reschedule, notification alerts, and commute map improvements. Some of those were validated by Round 3 (custom icons, notifications). Drag-to-reschedule was not. A feature freeze after Round 2 would have redirected that time toward OCR reliability and past-date fading — the two things Johnny actually asked for in Round 3 that still aren't fully resolved.
 
 ---
 
-## Where It Stands
+## On directing AI
 
-The ambulance sticker system is gone. Three hospital schedules live in one place. The app is on Johnny's phone. He knows when to leave for work without doing math. He gets reminded before shift transitions instead of hoping he remembers to check.
+The AI Direction Log documents 40 build entries. The AI Resistance Log documents 18 rejected outputs. Together they show one consistent pattern: AI is fast and accurate inside a well-defined scope, and unreliable at judgment calls that require user context it doesn't have.
 
-OCR still needs verification. Past dates still aren't faded. Drag-to-reschedule exists for a behavior nobody asked for.
+The failures were specific. AI proposed stubbing OCR before first contact — a technically defensible move that would have produced nothing useful in a user session (Resistance Entry 01). It defaulted to email/password auth without asking whether authentication was appropriate for this use case (Resistance Entry 06). It built desktop-only drag without checking whether drag was a behavior the user actually exhibited (Resistance Entry 12). None of these were incompetent outputs — they were all reasonable defaults for a generic app. They were wrong because this wasn't a generic app, and AI doesn't have access to the research that makes it specific.
 
-It's closer to something he'd use every day than the screenshot workflow it replaced. That's what three rounds of testing and forty build entries should produce. It isn't finished. Finished isn't what user testing produces — it produces a more honest understanding of what "done" would actually mean.
+The skill in this project wasn't using AI — it was knowing when to reject it. Every resistance entry represents a moment where the default output was technically plausible but contextually wrong, and where accepting it would have moved the product away from the user. That's a new kind of editorial judgment: not "is this code correct" but "does this decision reflect what I actually know about this person."
+
+The collaboration was most productive under explicit constraints. Telling AI "build this feature, but the API call must run in the browser" produced the pattern used across three separate features. Telling it "build the commute map, but no server endpoints" produced the cached geocoding approach. Open-ended prompts produced generic defaults. Constrained prompts produced specific solutions. Knowing the difference — and knowing when to add the constraint rather than accept the default — is the part of working with AI that requires a designer.
+
+---
+
+## Where it stands
+
+The ambulance sticker system is gone. Johnny has one place for all three hospitals. He knows when to leave without doing math. He gets notified before shift transitions instead of hoping he remembers to check. The app is on his phone.
+
+He still verifies OCR imports. Past dates still aren't faded. There's a drag-to-reschedule feature nobody asked for.
+
+*"This feels way more organized than what I was doing before."* That's Round 3. It's not a solved problem. It's a person who found a tool less bad than the one he built himself out of ambulance stickers and iMessage threads. For a first version tested three times with a real user, that's an honest result.
