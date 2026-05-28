@@ -1033,6 +1033,10 @@ Add AI-powered icon generation to the category editor with two input methods: up
 **Decided:**
 Accepted. The `currentColor` instruction in the SVG prompt is the key design decision — it means generated icons inherit the category color in every context (preview, grid, hero) without needing color post-processing. The normalization in `CatIcon` handles whatever width/height Claude emits, so the host component always gets an icon at the exact size it requests. Storing SVG in localStorage is consistent with how categories are already stored — no new infrastructure, no schema change.
 
+**Before (emoji-only picker, pre-Entry 24):**
+
+![Category editor before AI icons — only the Emoji tab exists](docs/category-editor-before-ai-icons.png)
+
 ---
 
 ## Entry 25 — Calendar Grid Rendering as "0"
