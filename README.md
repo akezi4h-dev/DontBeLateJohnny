@@ -472,13 +472,15 @@ Imagine you are walking between locations and checking the app quickly on your p
 
 The desktop navigation fix worked. Johnny moved between sections without hesitation and didn't mention orientation confusion once during this session. “The navigation makes more sense now” confirmed the Round 1 diagnosis was correct and the intervention was sufficient. OCR importing improved on the screenshots that had caused specific failures in Round 1 — times read correctly on the same uploads that had previously failed.
 
-> 📷 *[Screenshot: same schedule re-imported Round 2 — correct times]*
+![Round 2 — Commute View showing route map and leave times for upcoming shifts](docs/app-round2-commute-view-leave-time.png)
+*Round 2: Commute View — Google Maps route rendered for today's Vanderbilt shift (9:30am → 6pm, leave by 8:47am) and tomorrow's Publix shift (9am → 9pm, leave by 8:20am). The colored polylines and leave times are what Johnny called out: "I like the leave feature."*
 
 OCR still failed on some layouts with unusual formatting, and the silent-drop problem wasn't fully resolved. Johnny said “some screenshots still read differently depending on the layout” — which matches the behavior: the prompt handles standard formats well but unusual column arrangements or non-standard time shorthand still trip it.
 
 **Key surprise — glanceability over planning:** The most significant finding from this session wasn't about a feature that worked or failed. It was about *how* Johnny actually used the app. He said “I mostly just care about the next shift and when I should leave.” He didn't use the calendar to plan ahead. He opened the app, checked what was next, and stopped. This revealed that the mental model driving the original design — a unified planning tool across all three employers — was not how he naturally interacted with it. He was using it as a lookup, not a planner. This one observation directly shaped Round 3 priorities: reduce friction on the Today View path, make the “next shift + leave time” answer the first thing visible, and stop adding features that assume a planning session.
 
-> 📷 *[Screenshot: Today View — leave time display that Johnny called out positively]*
+![Round 2 — Shift card showing commute-aware "Leave by 5:15am" alert](docs/app-round2-shift-card-leave-time.png)
+*Round 2: Shift card for Nashville General (6am → 4:30pm) showing ~45 min commute and "Leave by 5:15am" — the feature Johnny called out: "I like the leave feature."*
 
 Johnny also asked for customizable employer logos unprompted — “maybe make customizable logos where you can upload and change the logos.” This aligned with something that had already been scoped but not yet built. It became a confirmed priority after this session rather than a nice-to-have.
 
