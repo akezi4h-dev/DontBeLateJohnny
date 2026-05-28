@@ -349,11 +349,13 @@ Several features worked immediately without any explanation. Johnny navigated th
 
 OCR importing was the clearest failure point. Two specific problems appeared: some screenshots produced wrong shift times (a start time imported as a different hour than what was on the schedule), and at least one screenshot dropped a shift entirely without any error message. Johnny noticed both failures immediately. The silent drop was worse than the wrong time — he had no way to know something was missing. This directly eroded trust: “I still want a faster way to fix mistakes if the schedule imports wrong.”
 
-> 📷 *[Screenshot: OCR import — misread shift time, Round 1]*
-
-> 📷 *[Screenshot: OCR import — dropped shift, Round 1]*
+![Science Provider (BetterShifts) schedule screenshot — the source of Round 1 OCR failures](docs/ocr-round1-science-provider-screenshot.png)
+*The Science Provider (BetterShifts) screenshot Johnny uploaded during Round 1. Two specific failure modes: shorthand times like `9a - 7p` were misread because the OCR prompt had no rules for that format, and dashed-border unconfirmed shifts (visible throughout) were parsed as confirmed shifts or dropped entirely with no error message. Both were fixed before Round 2 by rewriting the Claude extraction prompt with explicit time-parsing rules and a dashed-border exclusion instruction.*
 
 On desktop, Johnny repeatedly reached for a navigation bar that wasn't there. He completed tasks on mobile fluidly but on the laptop said “I didn't know where to go next” more than once. This wasn't a discoverability issue — he knew there were other sections. The problem was that switching between them required knowing where to click, and on a wider screen the bottom-nav pattern used on mobile didn't carry over. Navigation clarity on desktop became the single most actionable finding from this session.
+
+![Round 1 — Mobile-only layout, no persistent desktop navigation](docs/app-round1-before-desktop-nav.png)
+*Round 1 state: mobile-only layout. The bottom nav pattern didn't carry over to wider screens — Johnny said “I didn't know where to go next on laptop because there wasn't a clear menu.”*
 
 ### Key Changes Needed After First Round Testing
 
@@ -380,6 +382,9 @@ Three specific changes were made based on Round 1 findings before this session:
 1. **Desktop navigation header added** — A persistent top navigation bar was built for `md:` and wider viewports so that Calendar, Today, Commute, and Upload are always visible on desktop without requiring the user to know where to click.
 2. **OCR prompt revised** — The AI extraction prompt was rewritten with explicit parsing rules for shorthand time formats (e.g., `9a` → `09:00`) and an instruction to skip dashed-border unconfirmed shifts that some hospital systems display. This addressed both the wrong-time and dropped-shift failures from Round 1.
 3. **Leave-time visibility increased** — The Today View commute card was given higher visual weight so the leave time reads faster on first glance.
+
+![Round 2 — Desktop layout with persistent sidebar navigation](docs/app-round2-after-desktop-nav.png)
+*Round 2 state: persistent sidebar navigation added for desktop. Johnny confirmed: "The navigation makes more sense now." All three employers visible in the legend. Shift card showing Nashville General 6am → 2:30pm.*
 
 ### User Testing Goals
 
