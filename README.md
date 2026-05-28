@@ -352,6 +352,12 @@ OCR importing was the clearest failure point. Two specific problems appeared: so
 ![Science Provider (BetterShifts) schedule screenshot — the source of Round 1 OCR failures](docs/ocr-round1-science-provider-screenshot.png)
 *The Science Provider (BetterShifts) screenshot Johnny uploaded during Round 1. Two specific failure modes: shorthand times like `9a - 7p` were misread because the OCR prompt had no rules for that format, and dashed-border unconfirmed shifts (visible throughout) were parsed as confirmed shifts or dropped entirely with no error message. Both were fixed before Round 2 by rewriting the Claude extraction prompt with explicit time-parsing rules and a dashed-border exclusion instruction.*
 
+![OCR dropped shift — "Couldn't find shifts in that screenshot" error at 100% progress](docs/ocr-round1-dropped-shift-full.png)
+*Round 1 failure: OCR ran to 100% and returned nothing. The app surfaced a generic error with no indication of which shifts were missing — Johnny had no way to know what failed. Fixed before Round 2 by adding per-shift import confirmation states and silent-drop detection.*
+
+![OCR dropped shift — error dialog close crop](docs/ocr-round1-dropped-shift-dialog.png)
+*Same failure, closer crop. The error message "Couldn't find shifts in that screenshot. Try a clearer crop showing dates and times together." was the only feedback the app gave when an entire upload produced zero results.*
+
 On desktop, Johnny repeatedly reached for a navigation bar that wasn't there. He completed tasks on mobile fluidly but on the laptop said “I didn't know where to go next” more than once. This wasn't a discoverability issue — he knew there were other sections. The problem was that switching between them required knowing where to click, and on a wider screen the bottom-nav pattern used on mobile didn't carry over. Navigation clarity on desktop became the single most actionable finding from this session.
 
 ![Round 1 — Mobile-only layout, no persistent desktop navigation](docs/app-round1-before-desktop-nav.png)
