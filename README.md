@@ -260,7 +260,10 @@ Every choice traces back to Johnny:
 ---
 
 # Section 11 : User Testing
-Johnny did not feel comfortable having his face photographed or recorded during user testing. To respect his privacy and maintain research ethics, documentation focused on screen recordings, interaction notes, interface observations, direct quotes, and workflow behaviors rather than identifiable imagery of the participant.
+Johnny did not feel comfortable having his face photographed or recorded during user testing. To respect his privacy and maintain research ethics, documentation focused on screen recordings, interaction notes, interface observations, direct quotes, and workflow behaviors rather than identifiable imagery of the participant. Contact between sessions — calls and texts to verify OCR failures, confirm feature requests, and align on the next session — is documented below.
+
+![FaceTime call with Johnny Truong — user testing verification](docs/user-testing-call-johnny-truong.png)
+*FaceTime call with Johnny Truong between testing rounds — used to confirm which OCR screenshots had failed, verify feature requests before building them, and align on Round 3 session goals.*
 
 ## First Click Through
 **May 9, 2026 · iPhone 14 + laptop · in-person session**
@@ -1693,6 +1696,8 @@ The specific rejections that show direction over acceptance:
 ## Did I verify?
 
 Three in-person sessions. Texts and calls between each one.
+
+![FaceTime call with Johnny Truong](docs/user-testing-call-johnny-truong.png)
 
 **May 9 — First contact.** iPhone 14 and laptop, same session. Johnny navigated, imported, and broke things. The employer color system landed immediately. OCR failed on two specific screenshots — one imported a wrong time, one dropped a shift silently. He noticed both without being prompted. That session produced the desktop navigation finding, the OCR failure documentation, and the first real evidence that the color system was doing what it was supposed to do.
 
