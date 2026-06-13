@@ -44,11 +44,10 @@ Deno.serve(async (req) => {
                 type: 'text',
                 text: `This is a work schedule screenshot for ${companyName}. The year is ${currentYear} — use this year for ALL dates.
 
-INCLUDE only confirmed, scheduled work shifts.
+INCLUDE every calendar entry that shows a start-end time range (e.g. "6a - 2:30p", "6a - 1p", "9:00 AM - 5:00 PM"). This is a confirmed work shift — extract it no matter what color, border style, icon, badge, or label text appears on it (e.g. "Day Shift", "Train", "C2", "C3", "IV1", role/location codes, swap or exchange icons, etc.). Those labels are extra metadata and are NEVER a reason to skip a shift — different-looking entries that have a time range still count.
 
-SKIP all of the following:
-- Shifts shown with dashed or dotted borders (these are pending, open, or unconfirmed — not real assignments)
-- Any entry labeled "Off", "Day Off", "Time Off", "All Day Off", "RDO", "Holiday" (with no hours), or any wording that means the person is not working
+SKIP ONLY:
+- Entries with NO time range shown that are labeled "Off", "Day Off", "Time Off", "All Day Off", "RDO", "Holiday", or similar wording meaning the person is not working
 - Dates that belong to an adjacent month shown in the calendar overflow (e.g. June dates visible in a July calendar) — only extract shifts for the primary month shown in the header
 
 PARSING RULES:
@@ -59,7 +58,7 @@ PARSING RULES:
 Return ONLY a raw JSON array — no markdown, no backticks, no explanation:
 [{"date":"${currentYear}-MM-DD","startTime":"HH:MM","endTime":"HH:MM","role":"","location":"","company":"${companyName}"}]
 
-If no confirmed shifts are found, return [].`,
+If no shifts with times are found, return [].`,
               },
             ],
           },

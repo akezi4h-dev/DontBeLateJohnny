@@ -774,3 +774,18 @@ Two fixes:
 Accepted. Using a React state flag as a proxy for `window.google` availability is a category of async timing bug that appears frequently with external scripts. The correct pattern is to read the actual object (`window.google.maps.places`) at the moment of the call, not a React state snapshot from some earlier render. The `pendingLocationRef` retry makes the UX forgiving: the user can type immediately after opening Add Shift and the dropdown appears as soon as the Maps API loads, with no manual re-type required.
 
 ---
+
+## Entry 41 — Shifts With Unfamiliar Labels/Icons Dropped from Screenshots
+
+**Asked:**
+Screenshot of a scheduling calendar (May 2026) where most shifts were skipped on upload — only the "Time Off" day on May 5 should have been excluded, but entries with different tags below the time (e.g. "Train C2 w...", "Train IV1 w...", and a May 26 entry showing a different icon next to "C3") weren't being added either.
+
+**Produced:**
+Root cause was in the extraction prompt (`src/utils/extractShifts.js`, mirrored in the unused `supabase/functions/extract-shifts/index.ts`). The prompt said `INCLUDE only confirmed, scheduled work shifts` and `SKIP ... shifts shown with dashed or dotted borders (pending, open, or unconfirmed)`. Claude was generalizing "confirmed" too broadly — entries with an unfamiliar icon, badge, or label (training tags, swap/exchange icons, role codes) got classified as "unconfirmed" and dropped, even though they clearly displayed a start-end time range.
+
+Rewrote both prompts: any entry showing a start-end time range (e.g. "6a - 1p") is now explicitly a confirmed shift to extract, regardless of color, border style, icon, badge, or label text — those are called out as "extra metadata" that is "NEVER a reason to skip a shift." The SKIP list was narrowed to exactly two cases: entries with no time range labeled Off/Day Off/Time Off/RDO/Holiday/etc., and dates from an adjacent month's calendar overflow. The dashed-border "pending/unconfirmed" exclusion was removed entirely.
+
+**Decided:**
+Accepted. The dashed-border rule was added in Entry 18 for a specific screenshot format (Vanderbilt/Nashville General dashed-border open shifts), but it gave the model a vague heuristic — "unconfirmed" — that it applied to any visually unusual shift block, not just genuinely empty/open placeholders. The fix trades that heuristic for a concrete, visually-checkable signal (does this block show a time range?), which matches the actual product requirement: every worked shift should land on the calendar, and "Time Off" is the only thing that should not.
+
+---
