@@ -789,3 +789,18 @@ Rewrote both prompts: any entry showing a start-end time range (e.g. "6a - 1p") 
 Accepted. The dashed-border rule was added in Entry 18 for a specific screenshot format (Vanderbilt/Nashville General dashed-border open shifts), but it gave the model a vague heuristic — "unconfirmed" — that it applied to any visually unusual shift block, not just genuinely empty/open placeholders. The fix trades that heuristic for a concrete, visually-checkable signal (does this block show a time range?), which matches the actual product requirement: every worked shift should land on the calendar, and "Time Off" is the only thing that should not.
 
 ---
+
+## Entry 42 — App Stuck on "Loading…" Forever
+
+**Asked:**
+Screenshot of the live site (`akezi4h-dev.github.io`) showing only a dark screen with "Loading…" centered — the app never progressed past this state.
+
+**Produced:**
+Traced the screen to `App.jsx`'s top-level gate: `if (loading) return <div>Loading…</div>`, where `loading` comes from `useAuth()`. In `src/hooks/useAuth.jsx`, `loading` is only set to `false` inside `supabase.auth.getSession().then(({ data: { session } }) => {...})` — there was no `.catch()` or `.finally()`. If that promise rejects (e.g. the Supabase project is unreachable or paused) or resolves with an unexpected shape (destructuring `data.session` throws), the `.then()` callback never runs to completion and `setLoading(false)` is never called — the app hangs on "Loading…" indefinitely with no error shown.
+
+Fixed by restructuring the `getSession()` call: `.then(({ data, error }) => ...)` now logs any `error` and safely reads `data?.session?.user`, a `.catch()` handles outright promise rejection (sets `user` to `null`), and a `.finally(() => setLoading(false))` guarantees the loading gate always clears — successful, errored, or rejected — so the app always reaches either the Login screen or the main app instead of hanging.
+
+**Decided:**
+Accepted. This is a defensive fix for a hang with no console-visible cause to the end user. It doesn't address a potential underlying cause (e.g. a paused Supabase free-tier project after a period of inactivity, which returns non-JSON/error responses to auth calls) — if sign-in itself now fails on the Login screen, the Supabase project status should be checked in the dashboard. But the app should never again be stuck on a silent, un-recoverable "Loading…" screen — any auth-check failure now surfaces the Login form, where Login.jsx already displays `error.message` from failed sign-in attempts.
+
+---

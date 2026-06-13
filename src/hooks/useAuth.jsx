@@ -8,10 +8,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) console.error('getSession error:', error)
+        setUser(data?.session?.user ?? null)
+      })
+      .catch((err) => {
+        console.error('getSession failed:', err)
+        setUser(null)
+      })
+      .finally(() => setLoading(false))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null)
